@@ -65,3 +65,9 @@ htmlcov/
 *.tmp
 temp/
 tmp/
+
+# PyInstaller
+*.spec~
+build/
+dist/*.exe
+dist/*.app
