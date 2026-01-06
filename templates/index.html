@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrintForge Pricing Calculator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><span class="brand">PrintForge</span> Pricing Calculator</h1>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab-button active" data-tab="basic">Basic Info</button>
+            <button class="tab-button" data-tab="hardware">Hardware</button>
+            <button class="tab-button" data-tab="packaging">Packaging</button>
+            <button class="tab-button" data-tab="advanced">Advanced</button>
+            <button class="tab-button" data-tab="results">Results</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            
+            <!-- Basic Info Tab -->
+            <div id="basic-tab" class="tab-pane active">
+                <div class="section">
+                    <h2>Product Information</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Part Name:
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">The name of the part or product being quoted</span>
+                                </span>
+                            </label>
+                            <input type="text" id="part_name" value="New Part">
+                        </div>
+                        <div class="form-group">
+                            <label>Revision:
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Version number of this part design (e.g., V1, V2, Rev A)</span>
+                                </span>
+                            </label>
+                            <input type="text" id="revision" value="V1">
+                        </div>
+                        <div class="form-group">
+                            <label>Prepared By:
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Name of the person creating this quote</span>
+                                </span>
+                            </label>
+                            <input type="text" id="prepared_by" value="Marcus">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Material & Print Settings</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Material Type:
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Type of filament material used for printing (affects cost and properties)</span>
+                                </span>
+                            </label>
+                            <select id="material_type">
+                                <option value="PLA">PLA (Polylactic Acid)</option>
+                                <option value="PLA+">PLA+ (Enhanced PLA)</option>
+                                <option value="ABS">ABS (Acrylonitrile Butadiene Styrene)</option>
+                                <option value="PETG">PETG (Polyethylene Terephthalate Glycol)</option>
+                                <option value="ASA">ASA (Acrylonitrile Styrene Acrylate)</option>
+                                <option value="TPU">TPU (Thermoplastic Polyurethane)</option>
+                                <option value="TPE">TPE (Thermoplastic Elastomer)</option>
+                                <option value="Nylon">Nylon (Polyamide)</option>
+                                <option value="Nylon 6">Nylon 6</option>
+                                <option value="Nylon 12">Nylon 12</option>
+                                <option value="PC">PC (Polycarbonate)</option>
+                                <option value="PC-ABS">PC-ABS Blend</option>
+                                <option value="HIPS">HIPS (High Impact Polystyrene)</option>
+                                <option value="PVA">PVA (Polyvinyl Alcohol - Support)</option>
+                                <option value="BVOH">BVOH (Support Material)</option>
+                                <option value="Carbon Fiber PLA">Carbon Fiber PLA</option>
+                                <option value="Carbon Fiber PETG">Carbon Fiber PETG</option>
+                                <option value="Carbon Fiber Nylon">Carbon Fiber Nylon</option>
+                                <option value="Glass Fiber Nylon">Glass Fiber Nylon</option>
+                                <option value="Wood PLA">Wood PLA</option>
+                                <option value="Metal PLA">Metal PLA</option>
+                                <option value="Marble PLA">Marble PLA</option>
+                                <option value="Silk PLA">Silk PLA</option>
+                                <option value="Glow in the Dark PLA">Glow in the Dark PLA</option>
+                                <option value="PEEK">PEEK (Polyether Ether Ketone)</option>
+                                <option value="PEKK">PEKK (Polyetherketoneketone)</option>
+                                <option value="PEI">PEI (Polyetherimide/ULTEM)</option>
+                                <option value="PPSU">PPSU (Polyphenylsulfone)</option>
+                                <option value="PP">PP (Polypropylene)</option>
+                                <option value="PMMA">PMMA (Acrylic)</option>
+                                <option value="PET">PET (Polyethylene Terephthalate)</option>
+                                <option value="Flexible PLA">Flexible PLA</option>
+                                <option value="TPU 95A">TPU 95A (Shore Hardness)</option>
+                                <option value="TPU 85A">TPU 85A (Shore Hardness)</option>
+                                <option value="PVB">PVB (Polyvinyl Butyral)</option>
+                                <option value="PVDF">PVDF (Polyvinylidene Fluoride)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Filament Cost ($/kg):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Cost per kilogram of filament material (check your supplier pricing)</span>
+                                </span>
+                            </label>
+                            <input type="number" id="filament_cost" value="40.00" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Filament Required (g):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Total grams of filament needed for this print (from slicer software)</span>
+                                </span>
+                            </label>
+                            <input type="number" id="filament_required" value="34.78" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Total Print Time (hours):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Estimated print duration in hours (from slicer software)</span>
+                                </span>
+                            </label>
+                            <input type="number" id="print_time" value="4.00" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Labor Required (minutes):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Time needed for setup, removal, cleanup, and post-processing (minutes)</span>
+                                </span>
+                            </label>
+                            <input type="number" id="labor_time" value="30" step="1" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hardware Tab -->
+            <div id="hardware-tab" class="tab-pane">
+                <div class="section">
+                    <p class="info-text">Add hardware components like screws, magnets, inserts, etc.</p>
+                    
+                    <table id="hardware-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost ($)</th>
+                                <th>Total ($)</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Hardware rows will be added here -->
+                        </tbody>
+                    </table>
+
+                    <button class="btn btn-secondary" onclick="addHardwareRow()">Add Item</button>
+                </div>
+            </div>
+
+            <!-- Packaging Tab -->
+            <div id="packaging-tab" class="tab-pane">
+                <div class="section">
+                    <p class="info-text">Add packaging materials like boxes, bubble wrap, tape, and shipping costs.</p>
+                    
+                    <table id="packaging-table" class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Quantity</th>
+                                <th>Unit Cost ($)</th>
+                                <th>Total ($)</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Packaging rows will be added here -->
+                        </tbody>
+                    </table>
+
+                    <button class="btn btn-secondary" onclick="addPackagingRow()">Add Item</button>
+                </div>
+
+                <div class="section">
+                    <h2>Shipping Cost</h2>
+                    <div class="form-group">
+                        <label>Average Shipping Cost ($):
+                            <span class="tooltip">
+                                <span class="tooltip-icon">?</span>
+                                <span class="tooltip-text">Estimated cost to ship this item to the customer (carrier rates + packaging)</span>
+                            </span>
+                        </label>
+                        <input type="number" id="shipping_cost" value="0.00" step="0.01" min="0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Advanced Tab -->
+            <div id="advanced-tab" class="tab-pane">
+                <div class="section">
+                    <h2>Machine Cost Calculation</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Printer Cost ($):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Initial purchase price of the 3D printer</span>
+                                </span>
+                            </label>
+                            <input type="number" id="printer_cost" value="1000.00" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Additional Upfront Cost ($):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Other upfront costs like enclosures, upgrades, or setup expenses</span>
+                                </span>
+                            </label>
+                            <input type="number" id="upfront_cost" value="0.00" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Annual Maintenance ($/year):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Yearly cost for nozzles, belts, bearings, and other wear parts</span>
+                                </span>
+                            </label>
+                            <input type="number" id="annual_maintenance" value="75.00" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Expected Printer Life (years):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">How many years you expect the printer to remain productive</span>
+                                </span>
+                            </label>
+                            <input type="number" id="printer_life" value="3.00" step="0.01" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Average Uptime (%):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Percentage of time the printer is actively printing (not idle or offline). 50% = 12 hours/day average</span>
+                                </span>
+                            </label>
+                            <input type="number" id="average_uptime" value="50.00" step="0.01" min="0" max="100">
+                        </div>
+                        <div class="form-group">
+                            <label>Calculated Print Rate ($/hour):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Automatic calculation of hourly machine depreciation cost based on settings above</span>
+                                </span>
+                            </label>
+                            <input type="text" id="cost_per_hour" value="$0.0932 /hour" readonly class="readonly">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Electricity Cost Calculation</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Average Printer Power Consumption (W):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Average watts consumed during printing. Typical range: 200-400W. Check printer specs or measure with power meter</span>
+                                </span>
+                            </label>
+                            <input type="number" id="power_consumption" value="250.00" step="1" min="0" max="5000">
+                        </div>
+                        <div class="form-group">
+                            <label>Electricity Rate Cost ($/kWh):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Your electricity cost per kilowatt-hour (check your utility bill)</span>
+                                </span>
+                            </label>
+                            <input type="number" id="electricity_rate" value="0.3000" step="0.0001" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Electricity Daily Fixed Rate ($/day):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Daily supply charge or fixed daily fee from your electricity provider</span>
+                                </span>
+                            </label>
+                            <input type="number" id="electricity_daily" value="1.50" step="0.01" min="0">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Other Factors</h2>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Material Efficiency Factor:
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Accounts for material waste, failed prints, supports. 1.1 = 10% overhead, 1.2 = 20% overhead</span>
+                                </span>
+                            </label>
+                            <input type="number" id="efficiency_factor" value="1.10" step="0.01" min="1">
+                        </div>
+                        <div class="form-group">
+                            <label>Labor Hourly Rate ($/hour):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Your hourly rate for manual work (setup, post-processing, quality checks)</span>
+                                </span>
+                            </label>
+                            <input type="number" id="labor_rate" value="20.00" step="0.01" min="0">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Tab -->
+            <div id="results-tab" class="tab-pane">
+                <div class="section">
+                    <h2>Cost Breakdown</h2>
+                    <div class="results-grid">
+                        <div class="result-item">
+                            <label>Materials Cost:</label>
+                            <span id="result_material_cost" class="result-value">$0.00</span>
+                        </div>
+                        <div class="result-item">
+                            <label>Labor Cost:</label>
+                            <span id="result_labor_cost" class="result-value">$0.00</span>
+                        </div>
+                        <div class="result-item">
+                            <label>Machine Cost:</label>
+                            <span id="result_machine_cost" class="result-value">$0.00 (Depreciation: $0.00 + Electricity: $0.00)</span>
+                        </div>
+                        <div class="result-item">
+                            <label>Packaging & Shipping:</label>
+                            <span id="result_packaging_cost" class="result-value">$0.00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section total-cost-section">
+                    <h2>Total Landed Cost</h2>
+                    <div id="result_total_cost" class="total-cost">$0.00</div>
+                </div>
+
+                <div class="section">
+                    <h2>Suggested Pricing by Margin</h2>
+                    <div class="pricing-grid">
+                        <div class="pricing-item">
+                            <label>50% Margin Price:</label>
+                            <span id="result_price_50" class="price-value">$0.00</span>
+                        </div>
+                        <div class="pricing-item">
+                            <label>60% Margin Price:</label>
+                            <span id="result_price_60" class="price-value">$0.00</span>
+                        </div>
+                        <div class="pricing-item">
+                            <label>70% Margin Price:</label>
+                            <span id="result_price_70" class="price-value">$0.00</span>
+                        </div>
+                        <div class="pricing-item custom-margin">
+                            <label>Custom Margin Price:
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Set your own custom profit margin percentage to see the resulting price</span>
+                                </span>
+                            </label>
+                            <div class="custom-margin-controls">
+                                <input type="number" id="custom_margin" value="75" min="0" max="99" step="1">
+                                <span class="percent-symbol">%</span>
+                                <span id="result_price_custom" class="price-value">$0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-bar">
+            <button class="btn btn-secondary" onclick="saveConfig()">Save Config</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('load-file').click()">Load Config</button>
+            <input type="file" id="load-file" accept=".json" style="display: none;" onchange="loadConfig(event)">
+            <button class="btn btn-secondary" onclick="exportToExcel()">Export to Excel</button>
+            <div class="spacer"></div>
+            <button class="btn btn-primary" onclick="calculate()">Recalculate</button>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
