@@ -414,11 +414,11 @@ def export_excel():
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🔥 PrintForge Pricing Calculator")
+    print("PrintForge Pricing Calculator")
     print("="*60)
-    print("\n🌐 Opening in your browser...")
-    print("📍 URL: http://localhost:5000")
-    print("\n💡 Press Ctrl+C to stop the server")
+    print("\nOpening in your browser...")
+    print("URL: http://localhost:5000")
+    print("\nPress Ctrl+C to stop the server")
     print("="*60 + "\n")
     
     # Auto-open browser
