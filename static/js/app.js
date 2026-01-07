@@ -498,6 +498,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTheme(getInitialTheme());
     loadSettings();
     updateMaterialPresetFilters();
+    addBatchRow(); // Initialize batch with one row
 });
 
 // Quick Summary Card Functions
@@ -810,7 +811,533 @@ function applyMaterialPreset() {
     }
 }
 
-// Keyboard Shortcuts
+// ============================================================================
+// BATCH QUOTE MODE
+// ============================================================================
+
+let batchQuotes = [];
+let batchRowId = 0;
+
+// Add a new row to the batch table
+function addBatchRow() {
+    const tbody = document.getElementById('batch-tbody');
+    const rowId = ++batchRowId;
+
+    const row = document.createElement('tr');
+    row.id = `batch-row-${rowId}`;
+    row.dataset.rowId = rowId;
+
+    row.innerHTML = `
+        <td class="batch-row-number">${rowId}</td>
+        <td><input type="text" class="batch-input" id="batch-name-${rowId}" placeholder="Part ${rowId}" /></td>
+        <td>
+            <select class="batch-input" id="batch-material-${rowId}">
+                <option value="PLA">PLA</option>
+                <option value="PLA+">PLA+</option>
+                <option value="PETG">PETG</option>
+                <option value="ABS">ABS</option>
+                <option value="TPU">TPU</option>
+                <option value="Nylon">Nylon</option>
+                <option value="PC">PC</option>
+                <option value="ASA">ASA</option>
+            </select>
+        </td>
+        <td><input type="number" class="batch-input" id="batch-weight-${rowId}" placeholder="50" min="0" step="0.1" /></td>
+        <td><input type="number" class="batch-input" id="batch-time-${rowId}" placeholder="2.5" min="0" step="0.1" /></td>
+        <td><input type="number" class="batch-input" id="batch-qty-${rowId}" placeholder="1" min="1" value="1" /></td>
+        <td class="batch-cost" id="batch-cost-${rowId}">-</td>
+        <td class="batch-actions">
+            <button class="btn-icon" onclick="duplicateBatchRow(${rowId})" title="Duplicate">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                </svg>
+            </button>
+            <button class="btn-icon btn-delete" onclick="deleteBatchRow(${rowId})" title="Delete">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                </svg>
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(row);
+    renumberBatchRows();
+}
+
+// Duplicate a batch row
+function duplicateBatchRow(rowId) {
+    const sourceRow = document.getElementById(`batch-row-${rowId}`);
+    if (!sourceRow) return;
+
+    addBatchRow();
+    const newRowId = batchRowId;
+
+    // Copy values from source row
+    const fields = ['name', 'material', 'weight', 'time', 'qty'];
+    fields.forEach(field => {
+        const sourceEl = document.getElementById(`batch-${field}-${rowId}`);
+        const targetEl = document.getElementById(`batch-${field}-${newRowId}`);
+        if (sourceEl && targetEl) {
+            targetEl.value = sourceEl.value;
+        }
+    });
+
+    showMessage('Row duplicated', 'success');
+}
+
+// Delete a batch row
+function deleteBatchRow(rowId) {
+    const row = document.getElementById(`batch-row-${rowId}`);
+    if (row) {
+        row.remove();
+        renumberBatchRows();
+        updateBatchTotals();
+        showMessage('Row deleted', 'info');
+    }
+}
+
+// Renumber batch rows after deletion
+function renumberBatchRows() {
+    const rows = document.querySelectorAll('#batch-tbody tr');
+    rows.forEach((row, index) => {
+        const numberCell = row.querySelector('.batch-row-number');
+        if (numberCell) {
+            numberCell.textContent = index + 1;
+        }
+    });
+}
+
+// Clear all batch quotes
+function clearBatchQuotes() {
+    if (confirm('Clear all batch quotes? This cannot be undone.')) {
+        document.getElementById('batch-tbody').innerHTML = '';
+        batchQuotes = [];
+        batchRowId = 0;
+        updateBatchTotals();
+        showMessage('Batch cleared', 'info');
+    }
+}
+
+// Calculate all batch quotes
+function calculateBatchQuotes() {
+    const rows = document.querySelectorAll('#batch-tbody tr');
+    if (rows.length === 0) {
+        showMessage('No parts in batch. Click "Add Part" to get started.', 'error');
+        return;
+    }
+
+    batchQuotes = [];
+    let hasErrors = false;
+
+    rows.forEach(row => {
+        const rowId = row.dataset.rowId;
+
+        const partName = document.getElementById(`batch-name-${rowId}`).value || `Part ${rowId}`;
+        const material = document.getElementById(`batch-material-${rowId}`).value;
+        const weight = parseFloat(document.getElementById(`batch-weight-${rowId}`).value) || 0;
+        const printTime = parseFloat(document.getElementById(`batch-time-${rowId}`).value) || 0;
+        const quantity = parseInt(document.getElementById(`batch-qty-${rowId}`).value) || 1;
+
+        if (weight <= 0 || printTime <= 0) {
+            document.getElementById(`batch-cost-${rowId}`).textContent = 'Invalid';
+            document.getElementById(`batch-cost-${rowId}`).style.color = '#ff4d4f';
+            hasErrors = true;
+            return;
+        }
+
+        // Calculate using current settings
+        const cost = calculateBatchPartCost(weight, printTime, quantity);
+
+        batchQuotes.push({
+            rowId,
+            partName,
+            material,
+            weight,
+            printTime,
+            quantity,
+            unitCost: cost / quantity,
+            totalCost: cost
+        });
+
+        document.getElementById(`batch-cost-${rowId}`).textContent = `NZD $${cost.toFixed(2)}`;
+        document.getElementById(`batch-cost-${rowId}`).style.color = 'var(--text-primary)';
+    });
+
+    if (hasErrors) {
+        showMessage('Some rows have invalid data. Please check weight and print time values.', 'error');
+    } else {
+        showMessage(`Calculated ${batchQuotes.length} parts successfully`, 'success');
+    }
+
+    updateBatchTotals();
+}
+
+// Calculate cost for a single batch part
+function calculateBatchPartCost(weight, printTime, quantity) {
+    // Get current form values for calculation
+    const filamentCost = parseFloat(document.getElementById('filament_cost').value) || 40;
+    const laborRate = parseFloat(document.getElementById('labor_rate').value) || 20;
+    const printerCost = parseFloat(document.getElementById('printer_cost').value) || 1000;
+    const upfrontCost = parseFloat(document.getElementById('upfront_cost').value) || 0;
+    const annualMaintenance = parseFloat(document.getElementById('annual_maintenance').value) || 75;
+    const printerLife = parseFloat(document.getElementById('printer_life').value) || 3;
+    const avgUptime = parseFloat(document.getElementById('average_uptime').value) || 50;
+    const powerConsumption = parseFloat(document.getElementById('power_consumption').value) || 250;
+    const electricityRate = parseFloat(document.getElementById('electricity_rate').value) || 0.30;
+    const packagingCost = parseFloat(document.getElementById('packaging_cost').value) || 0;
+
+    // Material cost
+    const materialCost = (weight / 1000) * filamentCost;
+
+    // Labor cost
+    const laborCost = printTime * laborRate;
+
+    // Machine cost
+    const totalMachineCost = printerCost + upfrontCost;
+    const totalLifetimeHours = (printerLife * 365 * 24 * (avgUptime / 100));
+    const depreciationPerHour = totalMachineCost / totalLifetimeHours;
+    const maintenancePerHour = annualMaintenance / (365 * 24 * (avgUptime / 100));
+    const costPerHour = depreciationPerHour + maintenancePerHour;
+    const machineCost = printTime * costPerHour;
+
+    // Electricity cost
+    const electricityCost = ((powerConsumption / 1000) * printTime) * electricityRate;
+
+    // Total cost per unit
+    const unitCost = materialCost + laborCost + machineCost + electricityCost + packagingCost;
+
+    // Total cost for quantity
+    return unitCost * quantity;
+}
+
+// Update batch totals
+function updateBatchTotals() {
+    let totalQty = 0;
+    let totalCost = 0;
+
+    batchQuotes.forEach(quote => {
+        totalQty += quote.quantity;
+        totalCost += quote.totalCost;
+    });
+
+    document.getElementById('batch-total-qty').textContent = totalQty;
+    document.getElementById('batch-total-cost').textContent = `NZD $${totalCost.toFixed(2)}`;
+}
+
+// Export batch to Excel
+function exportBatchToExcel() {
+    if (batchQuotes.length === 0) {
+        showMessage('No calculated quotes to export. Calculate batch first.', 'error');
+        return;
+    }
+
+    // TODO: Implement Excel export for batch quotes
+    showMessage('Batch Excel export coming soon!', 'info');
+}
+
+// Export batch to PDF
+function exportBatchToPDF() {
+    if (batchQuotes.length === 0) {
+        showMessage('No calculated quotes to export. Calculate batch first.', 'error');
+        return;
+    }
+
+    // TODO: Implement PDF export for batch quotes
+    showMessage('Batch PDF export coming soon!', 'info');
+}
+
+// (Batch initialization moved to main DOMContentLoaded listener)
+
+// ============================================================================
+// PRINT PROFILE TEMPLATES
+// ============================================================================
+
+let printProfiles = [];
+
+// Load profiles from localStorage
+function loadPrintProfiles() {
+    const saved = localStorage.getItem('printforge_profiles');
+    if (saved) {
+        try {
+            printProfiles = JSON.parse(saved);
+        } catch (e) {
+            console.error('Failed to load profiles:', e);
+            printProfiles = [];
+        }
+    }
+
+    // Add default profiles if none exist
+    if (printProfiles.length === 0) {
+        printProfiles = [
+            {
+                id: 'default-budget',
+                name: 'Budget Printer',
+                description: 'Entry-level printer setup',
+                settings: {
+                    printer_cost: 300,
+                    upfront_cost: 0,
+                    annual_maintenance: 50,
+                    printer_life: 2,
+                    average_uptime: 40,
+                    power_consumption: 200,
+                    electricity_rate: 0.30,
+                    labor_rate: 15
+                },
+                isDefault: true
+            },
+            {
+                id: 'default-pro',
+                name: 'Professional Setup',
+                description: 'Mid-range professional printer',
+                settings: {
+                    printer_cost: 1500,
+                    upfront_cost: 200,
+                    annual_maintenance: 150,
+                    printer_life: 4,
+                    average_uptime: 60,
+                    power_consumption: 300,
+                    electricity_rate: 0.30,
+                    labor_rate: 25
+                },
+                isDefault: true
+            },
+            {
+                id: 'default-production',
+                name: 'High-End Production',
+                description: 'Industrial-grade production setup',
+                settings: {
+                    printer_cost: 5000,
+                    upfront_cost: 1000,
+                    annual_maintenance: 500,
+                    printer_life: 5,
+                    average_uptime: 80,
+                    power_consumption: 400,
+                    electricity_rate: 0.30,
+                    labor_rate: 35
+                },
+                isDefault: true
+            }
+        ];
+        savePrintProfiles();
+    }
+
+    return printProfiles;
+}
+
+// Save profiles to localStorage
+function savePrintProfiles() {
+    localStorage.setItem('printforge_profiles', JSON.stringify(printProfiles));
+}
+
+// Open profile manager modal
+function openProfileManager() {
+    const modal = document.getElementById('profile-modal');
+    if (!modal) {
+        createProfileModal();
+    }
+
+    populateProfileList();
+    document.getElementById('profile-modal').style.display = 'flex';
+}
+
+// Close profile manager modal
+function closeProfileManager() {
+    document.getElementById('profile-modal').style.display = 'none';
+}
+
+// Create profile modal HTML
+function createProfileModal() {
+    const modalHTML = `
+        <div id="profile-modal" class="modal" style="display: none;">
+            <div class="modal-content profile-modal-content">
+                <div class="modal-header">
+                    <h2>⚙️ Print Profile Manager</h2>
+                    <button class="close-btn" onclick="closeProfileManager()">✕</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="profile-list" id="profile-list">
+                        <!-- Profiles will be populated here -->
+                    </div>
+
+                    <div class="profile-actions">
+                        <button class="btn btn-primary" onclick="saveCurrentAsProfile()">
+                            💾 Save Current as New Profile
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportProfiles()">
+                            📤 Export All Profiles
+                        </button>
+                        <button class="btn btn-secondary" onclick="document.getElementById('import-profiles-file').click()">
+                            📥 Import Profiles
+                        </button>
+                        <input type="file" id="import-profiles-file" accept=".json" style="display: none;" onchange="importProfiles(event)">
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+    // Close modal when clicking outside
+    document.getElementById('profile-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'profile-modal') {
+            closeProfileManager();
+        }
+    });
+}
+
+// Populate profile list
+function populateProfileList() {
+    const profileList = document.getElementById('profile-list');
+    if (!profileList) return;
+
+    profileList.innerHTML = '';
+
+    printProfiles.forEach(profile => {
+        const profileCard = document.createElement('div');
+        profileCard.className = 'profile-card';
+        profileCard.innerHTML = `
+            <div class="profile-info">
+                <h3>${profile.name} ${profile.isDefault ? '<span class="badge">Default</span>' : ''}</h3>
+                <p>${profile.description || 'Custom profile'}</p>
+            </div>
+            <div class="profile-card-actions">
+                <button class="btn btn-sm btn-primary" onclick="applyProfile('${profile.id}')">Apply</button>
+                ${!profile.isDefault ? `<button class="btn btn-sm btn-secondary" onclick="deleteProfile('${profile.id}')">Delete</button>` : ''}
+            </div>
+        `;
+        profileList.appendChild(profileCard);
+    });
+}
+
+// Save current settings as a new profile
+function saveCurrentAsProfile() {
+    const name = prompt('Enter profile name:');
+    if (!name) return;
+
+    const description = prompt('Enter profile description (optional):') || '';
+
+    const profile = {
+        id: `custom-${Date.now()}`,
+        name,
+        description,
+        settings: {
+            printer_cost: parseFloat(document.getElementById('printer_cost').value) || 1000,
+            upfront_cost: parseFloat(document.getElementById('upfront_cost').value) || 0,
+            annual_maintenance: parseFloat(document.getElementById('annual_maintenance').value) || 75,
+            printer_life: parseFloat(document.getElementById('printer_life').value) || 3,
+            average_uptime: parseFloat(document.getElementById('average_uptime').value) || 50,
+            power_consumption: parseFloat(document.getElementById('power_consumption').value) || 250,
+            electricity_rate: parseFloat(document.getElementById('electricity_rate').value) || 0.30,
+            labor_rate: parseFloat(document.getElementById('labor_rate').value) || 20
+        },
+        isDefault: false
+    };
+
+    printProfiles.push(profile);
+    savePrintProfiles();
+    populateProfileList();
+    showMessage(`Profile "${name}" saved successfully`, 'success');
+}
+
+// Apply a profile
+function applyProfile(profileId) {
+    const profile = printProfiles.find(p => p.id === profileId);
+    if (!profile) return;
+
+    const settings = profile.settings;
+
+    // Apply all settings to form
+    document.getElementById('printer_cost').value = settings.printer_cost;
+    document.getElementById('upfront_cost').value = settings.upfront_cost;
+    document.getElementById('annual_maintenance').value = settings.annual_maintenance;
+    document.getElementById('printer_life').value = settings.printer_life;
+    document.getElementById('average_uptime').value = settings.average_uptime;
+    document.getElementById('power_consumption').value = settings.power_consumption;
+    document.getElementById('electricity_rate').value = settings.electricity_rate;
+    document.getElementById('labor_rate').value = settings.labor_rate;
+
+    closeProfileManager();
+    showMessage(`Profile "${profile.name}" applied`, 'success');
+
+    // Recalculate if on results tab
+    const activeTab = document.querySelector('.tab-button.active');
+    if (activeTab && activeTab.dataset.tab === 'results') {
+        calculate();
+    }
+}
+
+// Delete a profile
+function deleteProfile(profileId) {
+    const profile = printProfiles.find(p => p.id === profileId);
+    if (!profile || profile.isDefault) return;
+
+    if (confirm(`Delete profile "${profile.name}"?`)) {
+        printProfiles = printProfiles.filter(p => p.id !== profileId);
+        savePrintProfiles();
+        populateProfileList();
+        showMessage(`Profile "${profile.name}" deleted`, 'info');
+    }
+}
+
+// Export profiles to JSON
+function exportProfiles() {
+    const dataStr = JSON.stringify(printProfiles, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `printforge_profiles_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+
+    URL.revokeObjectURL(url);
+    showMessage('Profiles exported', 'success');
+}
+
+// Import profiles from JSON
+function importProfiles(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const imported = JSON.parse(e.target.result);
+            if (!Array.isArray(imported)) {
+                throw new Error('Invalid profile format');
+            }
+
+            // Merge imported profiles (skip duplicates by name)
+            imported.forEach(profile => {
+                if (!printProfiles.find(p => p.name === profile.name && !p.isDefault)) {
+                    profile.id = `custom-${Date.now()}-${Math.random()}`;
+                    profile.isDefault = false;
+                    printProfiles.push(profile);
+                }
+            });
+
+            savePrintProfiles();
+            populateProfileList();
+            showMessage(`Imported ${imported.length} profiles`, 'success');
+        } catch (err) {
+            showMessage('Failed to import profiles. Invalid file format.', 'error');
+        }
+    };
+
+    reader.readAsText(file);
+}
+
+// Initialize profiles on page load
+loadPrintProfiles();
+
+// ============================================================================
+// KEYBOARD SHORTCUTS
+// ============================================================================
+
 document.addEventListener('keydown', (e) => {
     // Ctrl+S: Save Config
     if (e.ctrlKey && e.key === 's') {

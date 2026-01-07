@@ -34,6 +34,7 @@
             <button class="tab-button" data-tab="hardware">Hardware</button>
             <button class="tab-button" data-tab="packaging">Packaging</button>
             <button class="tab-button" data-tab="advanced">Advanced</button>
+            <button class="tab-button" data-tab="batch">Batch Quote</button>
             <button class="tab-button" data-tab="results">Results</button>
         </div>
 
@@ -299,7 +300,12 @@
             <!-- Advanced Tab -->
             <div id="advanced-tab" class="tab-pane">
                 <div class="section">
-                    <h2>Machine Cost Calculation</h2>
+                    <div class="section-header-with-action">
+                        <h2>Machine Cost Calculation</h2>
+                        <button class="btn btn-secondary" onclick="openProfileManager()" title="Manage print profiles">
+                            ⚙️ Manage Profiles
+                        </button>
+                    </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Printer Cost ($):
@@ -412,6 +418,74 @@
                             </label>
                             <input type="number" id="labor_rate" placeholder="20.00" step="0.01" min="0">
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Batch Quote Tab -->
+            <div id="batch-tab" class="tab-pane">
+                <div class="section">
+                    <div class="batch-header">
+                        <h2>Batch Quote Mode</h2>
+                        <div class="batch-actions">
+                            <button class="btn btn-secondary" onclick="addBatchRow()" title="Add new part to batch">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="12" y1="5" x2="12" y2="19"/>
+                                    <line x1="5" y1="12" x2="19" y2="12"/>
+                                </svg>
+                                Add Part
+                            </button>
+                            <button class="btn btn-secondary" onclick="clearBatchQuotes()" title="Clear all batch quotes">
+                                Clear All
+                            </button>
+                            <button class="btn btn-primary" onclick="calculateBatchQuotes()" title="Calculate all batch quotes">
+                                Calculate All
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="batch-table-container">
+                        <table class="batch-table" id="batch-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 5%;">#</th>
+                                    <th style="width: 20%;">Part Name</th>
+                                    <th style="width: 15%;">Material</th>
+                                    <th style="width: 12%;">Weight (g)</th>
+                                    <th style="width: 12%;">Print Time (h)</th>
+                                    <th style="width: 10%;">Quantity</th>
+                                    <th style="width: 15%;">Total Cost</th>
+                                    <th style="width: 11%;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="batch-tbody">
+                                <!-- Batch rows will be added dynamically -->
+                            </tbody>
+                            <tfoot>
+                                <tr class="batch-summary-row">
+                                    <td colspan="5" style="text-align: right; font-weight: 600;">Batch Total:</td>
+                                    <td id="batch-total-qty" style="font-weight: 600;">0</td>
+                                    <td id="batch-total-cost" style="font-weight: 700; color: var(--primary-color);">NZD $0.00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <div class="batch-info">
+                        <p>
+                            <strong>💡 Tip:</strong> Use Batch Quote Mode to price multiple parts at once.
+                            Each row uses the current settings from other tabs (labor rate, machine costs, markup, etc.).
+                        </p>
+                    </div>
+
+                    <div class="batch-export-actions">
+                        <button class="btn btn-secondary" onclick="exportBatchToExcel()" title="Export batch to Excel">
+                            📊 Export Batch to Excel
+                        </button>
+                        <button class="btn btn-secondary" onclick="exportBatchToPDF()" title="Export batch to PDF">
+                            📄 Export Batch to PDF
+                        </button>
                     </div>
                 </div>
             </div>
