@@ -38,6 +38,44 @@
             <button class="tab-button" data-tab="results">Results</button>
         </div>
 
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <button class="btn btn-secondary" onclick="saveConfig()" title="Save configuration (Ctrl+S)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save
+            </button>
+            <button class="btn btn-secondary" onclick="document.getElementById('load-file').click()" title="Load configuration (Ctrl+L)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 0 0 2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+                </svg>
+                Load
+            </button>
+            <input type="file" id="load-file" accept=".json" style="display: none;" onchange="loadConfig(event)">
+            <button class="btn btn-secondary" onclick="exportToExcel()" title="Export to Excel (Ctrl+E)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Export
+            </button>
+            <div class="spacer"></div>
+            <button class="btn btn-primary" onclick="calculate()" title="Recalculate pricing (Ctrl+R)">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="23 4 23 10 17 10"/>
+                    <polyline points="1 20 1 14 7 14"/>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Recalculate
+            </button>
+        </div>
+
         <!-- Tab Content -->
         <div class="tab-content">
             
@@ -125,76 +163,58 @@
                                 <option value="PVDF">PVDF (Polyvinylidene Fluoride)</option>
                             </select>
                         </div>
-                        <!-- Enhanced Material Cost Presets -->
+                        <!-- Simplified Material Cost Presets -->
                         <div class="material-presets-section">
-                            <h4 style="margin-bottom: 16px; color: var(--text-primary);">
-                                Material Cost Presets (Formtech NZ)
-                                <span class="tooltip">
-                                    <span class="tooltip-icon">?</span>
-                                    <span class="tooltip-text">Filter by material type, manufacturer, diameter, and spool size. Prices from Formtech NZ catalog.</span>
-                                </span>
-                            </h4>
+                            <div class="preset-header">
+                                <h4>Material Cost Presets</h4>
+                                <button class="btn btn-sm btn-secondary" onclick="togglePresetForm()" id="preset-toggle-btn">
+                                    ➕ Create Custom Preset
+                                </button>
+                            </div>
 
-                            <div class="preset-filters">
-                                <div class="form-group">
-                                    <label>Material Type:</label>
-                                    <select id="preset_material_type" onchange="updateMaterialPresetFilters()">
-                                        <option value="All">All Materials</option>
-                                        <option value="PLA">PLA</option>
-                                        <option value="rPLA">rPLA (Recycled)</option>
-                                        <option value="PETG">PETG</option>
-                                        <option value="PETG-CF">PETG-CF (Carbon Fiber)</option>
-                                        <option value="ABS">ABS</option>
-                                        <option value="ASA">ASA</option>
-                                        <option value="TPU">TPU (Flexible)</option>
-                                        <option value="Nylon">Nylon</option>
-                                        <option value="PC">Polycarbonate</option>
-                                    </select>
+                            <!-- Create Preset Form (Hidden by default) -->
+                            <div class="preset-form" id="preset-form" style="display: none;">
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label>Preset Name:</label>
+                                        <input type="text" id="new_preset_name" placeholder="e.g., My PLA Setup">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Material Type:</label>
+                                        <input type="text" id="new_preset_material" placeholder="e.g., PLA, PETG, ABS">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Cost (NZD/kg):</label>
+                                        <input type="number" id="new_preset_cost" placeholder="45.00" step="0.01" min="0">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Supplier (optional):</label>
+                                        <input type="text" id="new_preset_supplier" placeholder="e.g., Formtech NZ">
+                                    </div>
                                 </div>
-
-                                <div class="form-group">
-                                    <label>Manufacturer:</label>
-                                    <select id="preset_manufacturer" onchange="updateMaterialPresetFilters()">
-                                        <option value="All">All Brands</option>
-                                        <option value="Kiwifil">Kiwifil (NZ 🇳🇿)</option>
-                                        <option value="3DXTech">3DXTech (USA)</option>
-                                        <option value="Polymaker">Polymaker</option>
-                                        <option value="Fillamentum">Fillamentum</option>
-                                        <option value="Prusa">Prusa</option>
-                                        <option value="Azurefilm">Azurefilm</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Diameter:</label>
-                                    <select id="preset_diameter" onchange="updateMaterialPresetFilters()">
-                                        <option value="">All</option>
-                                        <option value="1.75" selected>1.75mm</option>
-                                        <option value="2.85">2.85mm</option>
-                                    </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Spool Size:</label>
-                                    <select id="preset_spool_size" onchange="updateMaterialPresetFilters()">
-                                        <option value="">All</option>
-                                        <option value="0.5">0.5kg</option>
-                                        <option value="1.0" selected>1.0kg</option>
-                                        <option value="2.0">2.0kg</option>
-                                    </select>
+                                <div class="preset-form-actions">
+                                    <button class="btn btn-primary" onclick="saveCustomPreset()">
+                                        💾 Save Preset
+                                    </button>
+                                    <button class="btn btn-secondary" onclick="togglePresetForm()">
+                                        Cancel
+                                    </button>
                                 </div>
                             </div>
 
-                            <div class="form-group">
-                                <label>Select Product:</label>
-                                <select id="preset_product">
-                                    <option value="">-- Select Product --</option>
+                            <!-- Select Preset Dropdown -->
+                            <div class="form-group" style="margin-top: 16px;">
+                                <label>Select Saved Preset:</label>
+                                <select id="custom_preset_select" onchange="applyCustomPreset()">
+                                    <option value="">-- Select a Preset --</option>
                                 </select>
                             </div>
 
-                            <button class="btn btn-secondary" onclick="applyMaterialPreset()" style="width: 100%; margin-top: 8px;">
-                                Apply Selected Preset
-                            </button>
+                            <div class="preset-actions" id="preset-actions" style="display: none; margin-top: 8px;">
+                                <button class="btn btn-sm btn-danger" onclick="deleteSelectedPreset()">
+                                    🗑️ Delete Selected
+                                </button>
+                            </div>
                         </div>
                         <div class="form-group">
                             <label>Filament Cost (NZD/kg):
@@ -589,16 +609,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Action Buttons -->
-        <div class="action-bar">
-            <button class="btn btn-secondary" onclick="saveConfig()" title="Save configuration (Ctrl+S)">Save Config</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('load-file').click()" title="Load configuration (Ctrl+L)">Load Config</button>
-            <input type="file" id="load-file" accept=".json" style="display: none;" onchange="loadConfig(event)">
-            <button class="btn btn-secondary" onclick="exportToExcel()" title="Export to Excel (Ctrl+E)">Export to Excel</button>
-            <div class="spacer"></div>
-            <button class="btn btn-primary" onclick="calculate()" title="Recalculate pricing (Ctrl+R)">Recalculate</button>
-        </div>
     </div>
 
     <!-- Settings Sidebar -->
@@ -632,42 +642,6 @@
                     <label class="checkbox-label">
                         <input type="checkbox" id="setting_show_service_area" checked>
                         Show service area badge
-                    </label>
-                </div>
-            </div>
-
-            <!-- Material Preferences -->
-            <div class="settings-section">
-                <h3>🧵 Material Preferences</h3>
-                <div class="form-group">
-                    <label>Default Supplier:</label>
-                    <select id="setting_supplier">
-                        <option value="Formtech NZ" selected>Formtech NZ</option>
-                        <option value="Custom">Custom</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Preferred Manufacturer:</label>
-                    <select id="setting_manufacturer">
-                        <option value="All" selected>All Manufacturers</option>
-                        <option value="Kiwifil">Kiwifil (NZ)</option>
-                        <option value="3DXTech">3DXTech</option>
-                        <option value="Polymaker">Polymaker</option>
-                        <option value="Fillamentum">Fillamentum</option>
-                        <option value="Prusa">Prusa</option>
-                        <option value="Azurefilm">Azurefilm</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="setting_show_recycled" checked>
-                        Show recycled materials
-                    </label>
-                </div>
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="setting_nz_made_only">
-                        Show NZ-made only
                     </label>
                 </div>
             </div>

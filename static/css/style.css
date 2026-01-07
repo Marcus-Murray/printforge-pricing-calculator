@@ -581,13 +581,26 @@ select:hover {
     color: var(--text-primary);
 }
 
-/* Action Bar */
+/* Action Bar (moved to top) */
 .action-bar {
     display: flex;
-    gap: 12px;
-    padding: 20px 32px;
-    background-color: var(--bg-dark);
-    border-top: 1px solid var(--border-color);
+    gap: 8px;
+    padding: 12px 24px;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    align-items: center;
+}
+
+.action-bar .btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.action-bar .btn svg {
+    flex-shrink: 0;
 }
 
 .spacer {
@@ -811,7 +824,7 @@ select:hover {
 }
 
 /* ============================================================================
-   ENHANCED MATERIAL PRESETS SECTION
+   SIMPLIFIED MATERIAL PRESETS SECTION
    ============================================================================ */
 
 .material-presets-section {
@@ -822,35 +835,40 @@ select:hover {
     margin-bottom: 24px;
 }
 
-.material-presets-section h4 {
-    margin: 0 0 16px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
+.preset-header {
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 8px;
-}
-
-.preset-filters {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 12px;
     margin-bottom: 16px;
 }
 
-.preset-filters .form-group {
+.preset-header h4 {
     margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
-.preset-filters label {
-    font-size: 13px;
-    font-weight: 500;
-    margin-bottom: 4px;
+.preset-form {
+    background: rgba(255, 107, 53, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 16px;
 }
 
-.preset-filters select {
-    font-size: 13px;
+.preset-form-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.preset-form-actions .btn {
+    flex: 1;
+}
+
+.preset-actions {
+    margin-top: 8px;
 }
 
 /* ============================================================================

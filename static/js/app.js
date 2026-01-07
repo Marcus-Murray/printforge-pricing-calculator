@@ -497,7 +497,7 @@ if (window.matchMedia) {
 document.addEventListener('DOMContentLoaded', () => {
     setTheme(getInitialTheme());
     loadSettings();
-    updateMaterialPresetFilters();
+    loadCustomPresets(); // Load custom material presets
     addBatchRow(); // Initialize batch with one row
 });
 
@@ -525,67 +525,6 @@ function toggleSummary() {
 }
 
 // ============================================================================
-// FORMTECH NZ CATALOG DATA
-// ============================================================================
-
-const formtechCatalog = {
-    supplier: 'Formtech NZ',
-    location: 'Christchurch, NZ',
-    currency: 'NZD',
-    lastUpdated: '2026-01',
-    website: 'https://www.formtech.co.nz',
-
-    manufacturers: {
-        'Kiwifil': { country: 'New Zealand', eco: true, specialty: 'Local & Sustainable' },
-        '3DXTech': { country: 'USA', eco: false, specialty: 'Engineering Grade' },
-        'Polymaker': { country: 'China', eco: false, specialty: 'Consumer & Pro' },
-        'Fillamentum': { country: 'Czech Republic', eco: false, specialty: 'Premium Quality' },
-        'Azurefilm': { country: 'Croatia', eco: false, specialty: 'Value Range' },
-        'Prusa': { country: 'Czech Republic', eco: false, specialty: 'Quality Assured' }
-    },
-
-    products: [
-        // Kiwifil - New Zealand Made
-        { id: 'kw-pla-175-1kg', material: 'PLA', manufacturer: 'Kiwifil', name: 'Standard PLA', diameter: 1.75, spoolSize: 1.0, pricePerKg: 45, recycled: false, madeInNZ: true },
-        { id: 'kw-rpla-175-1kg', material: 'rPLA', manufacturer: 'Kiwifil', name: 'Recycled PLA Pro', diameter: 1.75, spoolSize: 1.0, pricePerKg: 52, recycled: true, madeInNZ: true },
-        { id: 'kw-pla-175-05kg', material: 'PLA', manufacturer: 'Kiwifil', name: 'Standard PLA', diameter: 1.75, spoolSize: 0.5, pricePerKg: 45, recycled: false, madeInNZ: true },
-        { id: 'kw-petg-175-1kg', material: 'PETG', manufacturer: 'Kiwifil', name: 'Standard PETG', diameter: 1.75, spoolSize: 1.0, pricePerKg: 58, recycled: false, madeInNZ: true },
-
-        // 3DXTech - Engineering Materials
-        { id: '3dx-pla-175-1kg', material: 'PLA', manufacturer: '3DXTech', name: '3DXPLA', diameter: 1.75, spoolSize: 1.0, pricePerKg: 48, recycled: false, madeInNZ: false },
-        { id: '3dx-petg-175-1kg', material: 'PETG', manufacturer: '3DXTech', name: '3DXPETG', diameter: 1.75, spoolSize: 1.0, pricePerKg: 62, recycled: false, madeInNZ: false },
-        { id: '3dx-petgcf-175-1kg', material: 'PETG-CF', manufacturer: '3DXTech', name: 'Carbon Fiber PETG', diameter: 1.75, spoolSize: 1.0, pricePerKg: 95, recycled: false, madeInNZ: false },
-        { id: '3dx-abs-175-1kg', material: 'ABS', manufacturer: '3DXTech', name: 'Engineering ABS', diameter: 1.75, spoolSize: 1.0, pricePerKg: 52, recycled: false, madeInNZ: false },
-        { id: '3dx-asa-175-1kg', material: 'ASA', manufacturer: '3DXTech', name: 'Weather Resistant ASA', diameter: 1.75, spoolSize: 1.0, pricePerKg: 68, recycled: false, madeInNZ: false },
-        { id: '3dx-nylon-175-1kg', material: 'Nylon', manufacturer: '3DXTech', name: 'Nylon 645', diameter: 1.75, spoolSize: 1.0, pricePerKg: 78, recycled: false, madeInNZ: false },
-        { id: '3dx-pc-175-1kg', material: 'PC', manufacturer: '3DXTech', name: 'Polycarbonate', diameter: 1.75, spoolSize: 1.0, pricePerKg: 98, recycled: false, madeInNZ: false },
-        { id: '3dx-tpu-175-05kg', material: 'TPU', manufacturer: '3DXTech', name: 'Flexible TPU 95A', diameter: 1.75, spoolSize: 0.5, pricePerKg: 85, recycled: false, madeInNZ: false },
-
-        // Polymaker - Consumer Range
-        { id: 'pm-pla-175-1kg', material: 'PLA', manufacturer: 'Polymaker', name: 'PolyLite PLA', diameter: 1.75, spoolSize: 1.0, pricePerKg: 42, recycled: false, madeInNZ: false },
-        { id: 'pm-petg-175-1kg', material: 'PETG', manufacturer: 'Polymaker', name: 'PolyLite PETG', diameter: 1.75, spoolSize: 1.0, pricePerKg: 55, recycled: false, madeInNZ: false },
-        { id: 'pm-polyterra-175-1kg', material: 'PLA', manufacturer: 'Polymaker', name: 'PolyTerra PLA (Eco)', diameter: 1.75, spoolSize: 1.0, pricePerKg: 46, recycled: false, madeInNZ: false },
-        { id: 'pm-abs-175-1kg', material: 'ABS', manufacturer: 'Polymaker', name: 'PolyLite ABS', diameter: 1.75, spoolSize: 1.0, pricePerKg: 48, recycled: false, madeInNZ: false },
-
-        // Fillamentum - Premium
-        { id: 'fm-pla-175-1kg', material: 'PLA', manufacturer: 'Fillamentum', name: 'PLA Extrafill', diameter: 1.75, spoolSize: 1.0, pricePerKg: 58, recycled: false, madeInNZ: false },
-        { id: 'fm-petg-175-1kg', material: 'PETG', manufacturer: 'Fillamentum', name: 'PETG Extrafill', diameter: 1.75, spoolSize: 1.0, pricePerKg: 65, recycled: false, madeInNZ: false },
-        { id: 'fm-asa-175-1kg', material: 'ASA', manufacturer: 'Fillamentum', name: 'ASA Extrafill', diameter: 1.75, spoolSize: 1.0, pricePerKg: 72, recycled: false, madeInNZ: false },
-        { id: 'fm-nylon-175-1kg', material: 'Nylon', manufacturer: 'Fillamentum', name: 'Nylon FX256', diameter: 1.75, spoolSize: 1.0, pricePerKg: 82, recycled: false, madeInNZ: false },
-
-        // Prusa - Quality Range
-        { id: 'pr-pla-175-1kg', material: 'PLA', manufacturer: 'Prusa', name: 'Prusament PLA', diameter: 1.75, spoolSize: 1.0, pricePerKg: 52, recycled: false, madeInNZ: false },
-        { id: 'pr-petg-175-1kg', material: 'PETG', manufacturer: 'Prusa', name: 'Prusament PETG', diameter: 1.75, spoolSize: 1.0, pricePerKg: 58, recycled: false, madeInNZ: false },
-        { id: 'pr-asa-175-1kg', material: 'ASA', manufacturer: 'Prusa', name: 'Prusament ASA', diameter: 1.75, spoolSize: 1.0, pricePerKg: 68, recycled: false, madeInNZ: false },
-
-        // Azurefilm - Value Range
-        { id: 'az-pla-175-1kg', material: 'PLA', manufacturer: 'Azurefilm', name: 'Azure PLA', diameter: 1.75, spoolSize: 1.0, pricePerKg: 38, recycled: false, madeInNZ: false },
-        { id: 'az-petg-175-1kg', material: 'PETG', manufacturer: 'Azurefilm', name: 'Azure PETG', diameter: 1.75, spoolSize: 1.0, pricePerKg: 48, recycled: false, madeInNZ: false },
-        { id: 'az-abs-175-1kg', material: 'ABS', manufacturer: 'Azurefilm', name: 'Azure ABS', diameter: 1.75, spoolSize: 1.0, pricePerKg: 45, recycled: false, madeInNZ: false }
-    ]
-};
-
-// ============================================================================
 // SETTINGS MANAGEMENT
 // ============================================================================
 
@@ -594,12 +533,6 @@ const defaultSettings = {
         location: 'Christchurch, NZ',
         currency: 'NZD',
         showServiceArea: true
-    },
-    materialPreferences: {
-        defaultSupplier: 'Formtech NZ',
-        preferredManufacturer: 'All',
-        showRecycled: true,
-        nzMadeOnly: false
     },
     display: {
         units: 'metric', // 'metric' or 'imperial'
@@ -624,7 +557,6 @@ function loadSettings() {
             // Merge with defaults to ensure new settings are present
             appSettings = {
                 regional: { ...defaultSettings.regional, ...appSettings.regional },
-                materialPreferences: { ...defaultSettings.materialPreferences, ...appSettings.materialPreferences },
                 display: { ...defaultSettings.display, ...appSettings.display },
                 export: { ...defaultSettings.export, ...appSettings.export }
             };
@@ -674,12 +606,6 @@ function populateSettingsUI() {
     document.getElementById('setting_currency').value = appSettings.regional.currency;
     document.getElementById('setting_show_service_area').checked = appSettings.regional.showServiceArea;
 
-    // Material Preferences
-    document.getElementById('setting_supplier').value = appSettings.materialPreferences.defaultSupplier;
-    document.getElementById('setting_manufacturer').value = appSettings.materialPreferences.preferredManufacturer;
-    document.getElementById('setting_show_recycled').checked = appSettings.materialPreferences.showRecycled;
-    document.getElementById('setting_nz_made_only').checked = appSettings.materialPreferences.nzMadeOnly;
-
     // Display
     document.getElementById('setting_units').value = appSettings.display.units;
     document.getElementById('setting_decimal_places').value = appSettings.display.decimalPlaces;
@@ -696,12 +622,6 @@ function applySettings() {
     appSettings.regional.currency = document.getElementById('setting_currency').value;
     appSettings.regional.showServiceArea = document.getElementById('setting_show_service_area').checked;
 
-    // Material Preferences
-    appSettings.materialPreferences.defaultSupplier = document.getElementById('setting_supplier').value;
-    appSettings.materialPreferences.preferredManufacturer = document.getElementById('setting_manufacturer').value;
-    appSettings.materialPreferences.showRecycled = document.getElementById('setting_show_recycled').checked;
-    appSettings.materialPreferences.nzMadeOnly = document.getElementById('setting_nz_made_only').checked;
-
     // Display
     appSettings.display.units = document.getElementById('setting_units').value;
     appSettings.display.decimalPlaces = parseInt(document.getElementById('setting_decimal_places').value);
@@ -712,102 +632,129 @@ function applySettings() {
 
     saveSettings();
     toggleSettings();
-
-    // Update material preset filters
-    updateMaterialPresetFilters();
 }
 
 // ============================================================================
-// ENHANCED MATERIAL PRESET SYSTEM
+// SIMPLIFIED MATERIAL PRESET SYSTEM
 // ============================================================================
 
-// Filter products based on current settings and selections
-function getFilteredProducts() {
-    const materialType = document.getElementById('preset_material_type').value;
-    const manufacturer = document.getElementById('preset_manufacturer').value;
-    const diameter = parseFloat(document.getElementById('preset_diameter').value);
-    const spoolSize = parseFloat(document.getElementById('preset_spool_size').value);
+let customMaterialPresets = [];
 
-    let filtered = formtechCatalog.products;
-
-    // Apply filters
-    if (materialType && materialType !== 'All') {
-        filtered = filtered.filter(p => p.material === materialType);
+// Load custom presets from localStorage
+function loadCustomPresets() {
+    const saved = localStorage.getItem('printforge_material_presets');
+    if (saved) {
+        try {
+            customMaterialPresets = JSON.parse(saved);
+        } catch (e) {
+            console.error('Failed to load custom presets:', e);
+            customMaterialPresets = [];
+        }
     }
-
-    if (manufacturer && manufacturer !== 'All') {
-        filtered = filtered.filter(p => p.manufacturer === manufacturer);
-    }
-
-    if (diameter) {
-        filtered = filtered.filter(p => p.diameter === diameter);
-    }
-
-    if (spoolSize) {
-        filtered = filtered.filter(p => p.spoolSize === spoolSize);
-    }
-
-    // Apply settings filters
-    if (appSettings.materialPreferences.nzMadeOnly) {
-        filtered = filtered.filter(p => p.madeInNZ);
-    }
-
-    if (!appSettings.materialPreferences.showRecycled) {
-        filtered = filtered.filter(p => !p.recycled);
-    }
-
-    if (appSettings.materialPreferences.preferredManufacturer !== 'All') {
-        filtered = filtered.filter(p => p.manufacturer === appSettings.materialPreferences.preferredManufacturer);
-    }
-
-    return filtered;
+    populateCustomPresets();
 }
 
-// Update material preset filters
-function updateMaterialPresetFilters() {
-    const products = getFilteredProducts();
-    const productSelect = document.getElementById('preset_product');
-
-    // Clear current options
-    productSelect.innerHTML = '<option value="">-- Select Product --</option>';
-
-    // Populate with filtered products
-    products.forEach(product => {
-        const totalPrice = product.pricePerKg * product.spoolSize;
-        const nzBadge = product.madeInNZ ? ' 🇳🇿' : '';
-        const recycledBadge = product.recycled ? ' ♻️' : '';
-        const option = document.createElement('option');
-        option.value = product.id;
-        option.textContent = `${product.manufacturer} ${product.name} ${product.diameter}mm ${product.spoolSize}kg - NZD $${totalPrice.toFixed(2)}${nzBadge}${recycledBadge}`;
-        productSelect.appendChild(option);
-    });
+// Save custom presets to localStorage
+function saveCustomPresets() {
+    localStorage.setItem('printforge_material_presets', JSON.stringify(customMaterialPresets));
 }
 
-// Apply selected material preset
-function applyMaterialPreset() {
-    const productId = document.getElementById('preset_product').value;
+// Toggle preset creation form
+function togglePresetForm() {
+    const form = document.getElementById('preset-form');
+    const btn = document.getElementById('preset-toggle-btn');
 
-    if (!productId) {
-        showMessage('Please select a product', 'error');
+    if (form.style.display === 'none') {
+        form.style.display = 'block';
+        btn.textContent = '✖ Cancel';
+    } else {
+        form.style.display = 'none';
+        btn.textContent = '➕ Create Custom Preset';
+        // Clear form
+        document.getElementById('new_preset_name').value = '';
+        document.getElementById('new_preset_material').value = '';
+        document.getElementById('new_preset_cost').value = '';
+        document.getElementById('new_preset_supplier').value = '';
+    }
+}
+
+// Save a new custom preset
+function saveCustomPreset() {
+    const name = document.getElementById('new_preset_name').value.trim();
+    const material = document.getElementById('new_preset_material').value.trim();
+    const cost = parseFloat(document.getElementById('new_preset_cost').value);
+    const supplier = document.getElementById('new_preset_supplier').value.trim() || 'Custom';
+
+    if (!name || !material || !cost || cost <= 0) {
+        showMessage('Please fill in all required fields with valid values', 'error');
         return;
     }
 
-    const product = formtechCatalog.products.find(p => p.id === productId);
+    const preset = {
+        id: `preset-${Date.now()}`,
+        name,
+        material,
+        cost,
+        supplier
+    };
 
-    if (product) {
-        const pricePerKg = product.pricePerKg;
-        document.getElementById('filament_cost').value = pricePerKg.toFixed(2);
+    customMaterialPresets.push(preset);
+    saveCustomPresets();
+    populateCustomPresets();
+    togglePresetForm();
+    showMessage(`Preset "${name}" saved successfully`, 'success');
+}
 
-        const totalPrice = product.pricePerKg * product.spoolSize;
-        const nzBadge = product.madeInNZ ? ' (Made in NZ 🇳🇿)' : '';
-        const recycledBadge = product.recycled ? ' (Recycled ♻️)' : '';
+// Populate custom preset dropdown
+function populateCustomPresets() {
+    const select = document.getElementById('custom_preset_select');
+    select.innerHTML = '<option value="">-- Select a Preset --</option>';
 
-        showMessage(
-            `Applied: ${product.manufacturer} ${product.name} - NZD $${pricePerKg.toFixed(2)}/kg (${product.spoolSize}kg spool = $${totalPrice.toFixed(2)})${nzBadge}${recycledBadge}`,
-            'success'
-        );
+    customMaterialPresets.forEach(preset => {
+        const option = document.createElement('option');
+        option.value = preset.id;
+        option.textContent = `${preset.name} - ${preset.material} @ NZD $${preset.cost.toFixed(2)}/kg (${preset.supplier})`;
+        select.appendChild(option);
+    });
 
+    // Show/hide delete button based on selection
+    const actions = document.getElementById('preset-actions');
+    actions.style.display = customMaterialPresets.length > 0 ? 'block' : 'none';
+}
+
+// Apply selected custom preset
+function applyCustomPreset() {
+    const select = document.getElementById('custom_preset_select');
+    const presetId = select.value;
+
+    if (!presetId) return;
+
+    const preset = customMaterialPresets.find(p => p.id === presetId);
+
+    if (preset) {
+        document.getElementById('filament_cost').value = preset.cost.toFixed(2);
+        showMessage(`Applied preset: ${preset.name} - NZD $${preset.cost.toFixed(2)}/kg`, 'success');
         autoCalculate();
+    }
+}
+
+// Delete selected preset
+function deleteSelectedPreset() {
+    const select = document.getElementById('custom_preset_select');
+    const presetId = select.value;
+
+    if (!presetId) {
+        showMessage('Please select a preset to delete', 'error');
+        return;
+    }
+
+    const preset = customMaterialPresets.find(p => p.id === presetId);
+
+    if (preset && confirm(`Delete preset "${preset.name}"?`)) {
+        customMaterialPresets = customMaterialPresets.filter(p => p.id !== presetId);
+        saveCustomPresets();
+        populateCustomPresets();
+        showMessage(`Preset "${preset.name}" deleted`, 'info');
     }
 }
 
