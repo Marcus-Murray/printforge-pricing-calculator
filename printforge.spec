@@ -3,7 +3,7 @@
 block_cipher = None
 
 a = Analysis(
-    ['app.py'],
+    ['app_standalone.py'],
     pathex=[],
     binaries=[],
     datas=[
@@ -14,6 +14,8 @@ a = Analysis(
         'openpyxl',
         'openpyxl.cell._writer',
         'openpyxl.styles.stylesheet',
+        'flask',
+        'werkzeug',
     ],
     hookspath=[],
     hooksconfig={},
