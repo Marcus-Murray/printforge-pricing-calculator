@@ -224,6 +224,19 @@ async function calculate() {
             // Update Quick Summary Card
             updateQuickSummary(result);
 
+            // Add to history
+            addToHistory({
+                partName: data.part_name,
+                material: data.material_type,
+                weight: data.filament_required,
+                printTime: data.print_time,
+                totalCost: result.total_cost,
+                materialCost: result.material_cost,
+                laborCost: result.labor_cost,
+                machineCost: result.machine_cost_total,
+                packagingCost: result.packaging_cost
+            });
+
             showMessage('Calculation complete!', 'success');
         } else {
             showMessage('Calculation failed: ' + result.error, 'error');
@@ -498,6 +511,8 @@ document.addEventListener('DOMContentLoaded', () => {
     setTheme(getInitialTheme());
     loadSettings();
     loadCustomPresets(); // Load custom material presets
+    loadPrintProfiles(); // Load print profiles
+    loadHistory(); // Load quote history
     addBatchRow(); // Initialize batch with one row
 });
 
@@ -1313,3 +1328,641 @@ document.addEventListener('keydown', (e) => {
         showMessage('Recalculating... (Ctrl+R)', 'success');
     }
 });
+
+// ============================================================
+// Cost History & Analytics
+// ============================================================
+
+let quoteHistory = [];
+let historyChart = null;
+
+// Load history from localStorage
+function loadHistory() {
+    const saved = localStorage.getItem('printforge_history');
+    if (saved) {
+        quoteHistory = JSON.parse(saved);
+        updateHistoryDisplay();
+    }
+}
+
+// Save history to localStorage
+function saveHistory() {
+    localStorage.setItem('printforge_history', JSON.stringify(quoteHistory));
+}
+
+// Add quote to history (called from calculate function)
+function addToHistory(quoteData) {
+    const historyEntry = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        partName: quoteData.partName || 'Unnamed Part',
+        material: quoteData.material || 'PLA',
+        weight: parseFloat(quoteData.weight) || 0,
+        printTime: parseFloat(quoteData.printTime) || 0,
+        totalCost: parseFloat(quoteData.totalCost) || 0,
+        breakdown: {
+            material: parseFloat(quoteData.materialCost) || 0,
+            labor: parseFloat(quoteData.laborCost) || 0,
+            machine: parseFloat(quoteData.machineCost) || 0,
+            packaging: parseFloat(quoteData.packagingCost) || 0
+        }
+    };
+
+    quoteHistory.unshift(historyEntry); // Add to beginning
+
+    // Keep only last 100 quotes
+    if (quoteHistory.length > 100) {
+        quoteHistory = quoteHistory.slice(0, 100);
+    }
+
+    saveHistory();
+    updateHistoryDisplay();
+}
+
+// Update history display (table and stats)
+function updateHistoryDisplay() {
+    updateHistoryTable();
+    updateHistoryStats();
+    updateHistoryChart();
+}
+
+// Update history table
+function updateHistoryTable() {
+    const tbody = document.getElementById('history-tbody');
+
+    if (quoteHistory.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No quotes saved yet. Calculate a quote to start tracking history.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = quoteHistory.slice(0, 20).map(entry => {
+        const date = new Date(entry.timestamp);
+        const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+        return `
+            <tr>
+                <td>${formattedDate}</td>
+                <td>${entry.partName}</td>
+                <td>${entry.material}</td>
+                <td>${entry.weight.toFixed(2)}</td>
+                <td>${entry.printTime.toFixed(2)}</td>
+                <td style="font-weight: 600; color: var(--primary-color);">NZD $${entry.totalCost.toFixed(2)}</td>
+                <td>
+                    <button class="btn-icon" onclick="loadHistoryEntry(${entry.id})" title="Load this quote">
+                        📂 Load
+                    </button>
+                    <button class="btn-icon btn-delete" onclick="deleteHistoryEntry(${entry.id})" title="Delete">
+                        🗑️
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Update statistics
+function updateHistoryStats() {
+    const totalQuotes = quoteHistory.length;
+    const costs = quoteHistory.map(q => q.totalCost);
+    const avgCost = costs.length > 0 ? costs.reduce((a, b) => a + b, 0) / costs.length : 0;
+    const maxCost = costs.length > 0 ? Math.max(...costs) : 0;
+    const minCost = costs.length > 0 ? Math.min(...costs) : 0;
+
+    document.getElementById('stat_total_quotes').textContent = totalQuotes;
+    document.getElementById('stat_avg_cost').textContent = `NZD $${avgCost.toFixed(2)}`;
+    document.getElementById('stat_max_cost').textContent = `NZD $${maxCost.toFixed(2)}`;
+    document.getElementById('stat_min_cost').textContent = `NZD $${minCost.toFixed(2)}`;
+}
+
+// Update chart
+function updateHistoryChart() {
+    const canvas = document.getElementById('history_chart');
+    const ctx = canvas.getContext('2d');
+
+    // Get filter values
+    const dateFilter = parseInt(document.getElementById('history_date_filter')?.value || 'all');
+    const materialFilter = document.getElementById('history_material_filter')?.value || 'all';
+    const chartType = document.getElementById('history_chart_type')?.value || 'line';
+
+    // Filter data
+    let filteredData = quoteHistory;
+
+    // Filter by date
+    if (dateFilter !== 'all') {
+        const cutoffDate = new Date();
+        cutoffDate.setDate(cutoffDate.getDate() - dateFilter);
+        filteredData = filteredData.filter(q => new Date(q.timestamp) >= cutoffDate);
+    }
+
+    // Filter by material
+    if (materialFilter !== 'all') {
+        filteredData = filteredData.filter(q => q.material === materialFilter);
+    }
+
+    // Prepare chart data
+    const labels = filteredData.slice().reverse().map(q => {
+        const date = new Date(q.timestamp);
+        return date.toLocaleDateString();
+    });
+
+    const costData = filteredData.slice().reverse().map(q => q.totalCost);
+
+    // Destroy existing chart
+    if (historyChart) {
+        historyChart.destroy();
+    }
+
+    // Create new chart
+    historyChart = new Chart(ctx, {
+        type: chartType,
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Total Cost (NZD $)',
+                data: costData,
+                borderColor: 'rgb(255, 107, 53)',
+                backgroundColor: 'rgba(255, 107, 53, 0.1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: chartType === 'line'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim()
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Quote Cost History',
+                    color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary').trim(),
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'NZD $' + value.toFixed(2);
+                        },
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim()
+                    },
+                    grid: {
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--text-secondary').trim()
+                    },
+                    grid: {
+                        color: getComputedStyle(document.documentElement).getPropertyValue('--border-color').trim()
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Load a history entry into the form
+function loadHistoryEntry(entryId) {
+    const entry = quoteHistory.find(q => q.id === entryId);
+    if (!entry) return;
+
+    // Load basic info
+    document.getElementById('part_name').value = entry.partName;
+    document.getElementById('material_type').value = entry.material;
+    document.getElementById('filament_required').value = entry.weight;
+    document.getElementById('print_time').value = entry.printTime;
+
+    // Switch to basic tab
+    const basicTab = document.querySelector('[data-tab="basic"]');
+    if (basicTab) basicTab.click();
+
+    showMessage('Quote loaded from history', 'success');
+}
+
+// Delete a history entry
+function deleteHistoryEntry(entryId) {
+    if (!confirm('Delete this quote from history?')) return;
+
+    quoteHistory = quoteHistory.filter(q => q.id !== entryId);
+    saveHistory();
+    updateHistoryDisplay();
+    showMessage('Quote deleted from history', 'success');
+}
+
+// Clear all history
+function clearHistory() {
+    if (!confirm('Clear all quote history? This cannot be undone.')) return;
+
+    quoteHistory = [];
+    saveHistory();
+    updateHistoryDisplay();
+    showMessage('History cleared', 'success');
+}
+
+// Export history to Excel
+function exportHistoryToExcel() {
+    if (quoteHistory.length === 0) {
+        showMessage('No history to export', 'error');
+        return;
+    }
+
+    // Create workbook
+    const wb = XLSX.utils.book_new();
+
+    // Prepare data for history sheet
+    const historyData = quoteHistory.map(entry => ({
+        'Date': new Date(entry.timestamp).toLocaleString(),
+        'Part Name': entry.partName,
+        'Material': entry.material,
+        'Weight (g)': entry.weight,
+        'Print Time (h)': entry.printTime,
+        'Material Cost': entry.breakdown.material,
+        'Labor Cost': entry.breakdown.labor,
+        'Machine Cost': entry.breakdown.machine,
+        'Packaging Cost': entry.breakdown.packaging,
+        'Total Cost': entry.totalCost
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(historyData);
+    XLSX.utils.book_append_sheet(wb, ws, 'Quote History');
+
+    // Save file
+    const filename = `printforge_history_${new Date().toISOString().split('T')[0]}.xlsx`;
+    XLSX.writeFile(wb, filename);
+
+    showMessage('History exported to Excel', 'success');
+}
+
+// ============================================================
+// Export Menu Toggle
+// ============================================================
+
+function toggleExportMenu() {
+    const menu = document.getElementById('export-menu');
+    if (menu.style.display === 'none' || !menu.style.display) {
+        menu.style.display = 'block';
+    } else {
+        menu.style.display = 'none';
+    }
+}
+
+// Close export menu when clicking outside
+document.addEventListener('click', (e) => {
+    const exportDropdown = e.target.closest('.export-dropdown');
+    if (!exportDropdown) {
+        const menu = document.getElementById('export-menu');
+        if (menu) menu.style.display = 'none';
+    }
+});
+
+// ============================================================
+// Advanced PDF Export
+// ============================================================
+
+async function exportToPDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        // Get current form data
+        const data = collectFormData();
+
+        // Calculate if not already done
+        const response = await fetch('/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+
+        if (!result.success) {
+            showMessage('Please calculate quote first', 'error');
+            return;
+        }
+
+        // Get settings
+        const settings = appSettings || {};
+        const companyName = settings.export?.companyName || 'PrintForge';
+        const location = settings.regional?.location || 'Christchurch, NZ';
+        const currency = settings.regional?.currency || 'NZD';
+
+        // Colors
+        const primaryColor = [255, 107, 53]; // Orange
+        const darkGray = [60, 60, 60];
+        const lightGray = [200, 200, 200];
+
+        // Page setup
+        let yPos = 20;
+        const pageWidth = doc.internal.pageSize.width;
+        const margin = 20;
+
+        // Header with company branding
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, pageWidth, 30, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text(companyName, margin, 20);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(location, pageWidth - margin, 20, { align: 'right' });
+
+        yPos = 45;
+
+        // Quote title
+        doc.setTextColor(...darkGray);
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('3D Printing Quote', margin, yPos);
+
+        yPos += 5;
+        doc.setDrawColor(...lightGray);
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
+
+        // Quote info
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, margin, yPos);
+        doc.text(`Quote #: ${Date.now()}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 6;
+        doc.text(`Part Name: ${data.part_name || 'Unnamed Part'}`, margin, yPos);
+        yPos += 6;
+        doc.text(`Revision: ${data.revision || 'V1'}`, margin, yPos);
+        doc.text(`Prepared By: ${data.prepared_by || '—'}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 12;
+
+        // Print specifications section
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('Print Specifications', margin, yPos);
+        yPos += 8;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...darkGray);
+
+        const specs = [
+            ['Material:', data.material_type || 'PLA'],
+            ['Filament Required:', `${data.filament_required || 0} g`],
+            ['Print Time:', `${data.print_time || 0} hours`],
+            ['Labor Time:', `${data.labor_time || 0} minutes`]
+        ];
+
+        specs.forEach(([label, value]) => {
+            doc.text(label, margin, yPos);
+            doc.text(value, margin + 60, yPos);
+            yPos += 6;
+        });
+
+        yPos += 6;
+
+        // Cost breakdown table
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('Cost Breakdown', margin, yPos);
+        yPos += 2;
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Cost Category', 'Amount']],
+            body: [
+                ['Material Cost', `${currency} $${result.material_cost.toFixed(2)}`],
+                ['Labor Cost', `${currency} $${result.labor_cost.toFixed(2)}`],
+                ['Machine Cost (Depreciation)', `${currency} $${result.machine_depreciation.toFixed(2)}`],
+                ['Electricity Cost', `${currency} $${result.electricity_cost.toFixed(2)}`],
+                ['Packaging & Shipping', `${currency} $${result.packaging_cost.toFixed(2)}`]
+            ],
+            foot: [['Total Cost', `${currency} $${result.total_cost.toFixed(2)}`]],
+            theme: 'grid',
+            headStyles: {
+                fillColor: primaryColor,
+                textColor: 255,
+                fontSize: 10,
+                fontStyle: 'bold'
+            },
+            footStyles: {
+                fillColor: [240, 240, 240],
+                textColor: darkGray,
+                fontSize: 11,
+                fontStyle: 'bold'
+            },
+            bodyStyles: {
+                textColor: darkGray,
+                fontSize: 10
+            },
+            columnStyles: {
+                0: { cellWidth: 120 },
+                1: { cellWidth: 'auto', halign: 'right' }
+            },
+            margin: { left: margin, right: margin }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 12;
+
+        // Pricing options table
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(...primaryColor);
+        doc.text('Pricing Options', margin, yPos);
+        yPos += 2;
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Margin', 'Recommended Price']],
+            body: [
+                ['50% Margin', `${currency} $${result.price_50.toFixed(2)}`],
+                ['60% Margin', `${currency} $${result.price_60.toFixed(2)}`],
+                ['70% Margin (Recommended)', `${currency} $${result.price_70.toFixed(2)}`],
+                ['Custom Margin', `${currency} $${result.price_custom.toFixed(2)}`]
+            ],
+            theme: 'grid',
+            headStyles: {
+                fillColor: primaryColor,
+                textColor: 255,
+                fontSize: 10,
+                fontStyle: 'bold'
+            },
+            bodyStyles: {
+                textColor: darkGray,
+                fontSize: 10
+            },
+            columnStyles: {
+                0: { cellWidth: 120 },
+                1: { cellWidth: 'auto', halign: 'right', fontStyle: 'bold' }
+            },
+            margin: { left: margin, right: margin }
+        });
+
+        yPos = doc.lastAutoTable.finalY + 12;
+
+        // Hardware items if any
+        if (data.hardware && data.hardware.length > 0) {
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...primaryColor);
+            doc.text('Hardware Components', margin, yPos);
+            yPos += 2;
+
+            const hardwareData = data.hardware.map(item => [
+                item.name,
+                item.quantity,
+                `${currency} $${item.unit_cost.toFixed(2)}`,
+                `${currency} $${(item.quantity * item.unit_cost).toFixed(2)}`
+            ]);
+
+            doc.autoTable({
+                startY: yPos,
+                head: [['Item', 'Qty', 'Unit Cost', 'Total']],
+                body: hardwareData,
+                theme: 'grid',
+                headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 9 },
+                bodyStyles: { textColor: darkGray, fontSize: 9 },
+                margin: { left: margin, right: margin }
+            });
+
+            yPos = doc.lastAutoTable.finalY + 12;
+        }
+
+        // Footer
+        const footerY = doc.internal.pageSize.height - 20;
+        doc.setDrawColor(...lightGray);
+        doc.line(margin, footerY, pageWidth - margin, footerY);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Generated by PrintForge Pricing Calculator', pageWidth / 2, footerY + 5, { align: 'center' });
+        doc.text(`${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`, pageWidth / 2, footerY + 10, { align: 'center' });
+
+        // Save PDF
+        const filename = `${data.part_name.replace(/ /g, '_')}_Quote_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(filename);
+
+        showMessage('PDF exported successfully', 'success');
+
+    } catch (error) {
+        console.error('PDF export error:', error);
+        showMessage('PDF export failed: ' + error.message, 'error');
+    }
+}
+
+// Export Batch to PDF
+async function exportBatchToPDF() {
+    try {
+        if (batchQuotes.length === 0) {
+            showMessage('No batch quotes to export', 'error');
+            return;
+        }
+
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+
+        const settings = appSettings || {};
+        const companyName = settings.export?.companyName || 'PrintForge';
+        const location = settings.regional?.location || 'Christchurch, NZ';
+        const currency = settings.regional?.currency || 'NZD';
+
+        const primaryColor = [255, 107, 53];
+        const darkGray = [60, 60, 60];
+        const lightGray = [200, 200, 200];
+
+        let yPos = 20;
+        const pageWidth = doc.internal.pageSize.width;
+        const margin = 20;
+
+        // Header
+        doc.setFillColor(...primaryColor);
+        doc.rect(0, 0, pageWidth, 30, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(24);
+        doc.setFont('helvetica', 'bold');
+        doc.text(companyName, margin, 20);
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(location, pageWidth - margin, 20, { align: 'right' });
+
+        yPos = 45;
+
+        // Title
+        doc.setTextColor(...darkGray);
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Batch Quote Summary', margin, yPos);
+
+        yPos += 5;
+        doc.setDrawColor(...lightGray);
+        doc.setLineWidth(0.5);
+        doc.line(margin, yPos, pageWidth - margin, yPos);
+        yPos += 10;
+
+        // Quote info
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, margin, yPos);
+        doc.text(`Total Parts: ${batchQuotes.length}`, pageWidth - margin, yPos, { align: 'right' });
+        yPos += 12;
+
+        // Batch quotes table
+        const batchData = batchQuotes.map(quote => [
+            quote.partName || `Part ${quote.rowId}`,
+            quote.material || 'PLA',
+            quote.weight.toFixed(2),
+            quote.printTime.toFixed(2),
+            quote.quantity,
+            `${currency} $${quote.totalCost.toFixed(2)}`
+        ]);
+
+        const totalCost = batchQuotes.reduce((sum, q) => sum + q.totalCost, 0);
+
+        doc.autoTable({
+            startY: yPos,
+            head: [['Part Name', 'Material', 'Weight (g)', 'Time (h)', 'Qty', 'Total Cost']],
+            body: batchData,
+            foot: [[{ content: 'Batch Total:', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } }, `${currency} $${totalCost.toFixed(2)}`]],
+            theme: 'grid',
+            headStyles: { fillColor: primaryColor, textColor: 255, fontSize: 9, fontStyle: 'bold' },
+            footStyles: { fillColor: [240, 240, 240], textColor: darkGray, fontSize: 11, fontStyle: 'bold' },
+            bodyStyles: { textColor: darkGray, fontSize: 9 },
+            margin: { left: margin, right: margin }
+        });
+
+        // Footer
+        const footerY = doc.internal.pageSize.height - 20;
+        doc.setDrawColor(...lightGray);
+        doc.line(margin, footerY, pageWidth - margin, footerY);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.setFont('helvetica', 'italic');
+        doc.text('Generated by PrintForge Pricing Calculator', pageWidth / 2, footerY + 5, { align: 'center' });
+
+        // Save PDF
+        const filename = `PrintForge_Batch_Quote_${new Date().toISOString().split('T')[0]}.pdf`;
+        doc.save(filename);
+
+        showMessage('Batch PDF exported successfully', 'success');
+
+    } catch (error) {
+        console.error('Batch PDF export error:', error);
+        showMessage('Batch PDF export failed: ' + error.message, 'error');
+    }
+}
