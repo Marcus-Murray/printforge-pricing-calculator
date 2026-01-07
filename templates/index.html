@@ -9,7 +9,23 @@
 <body>
     <div class="container">
         <header>
-            <h1><span class="brand">PrintForge</span> Pricing Calculator</h1>
+            <h1>
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="PrintForge Logo" class="logo-icon">
+                <span class="brand">PrintForge</span> Pricing Calculator
+            </h1>
+            <div class="header-actions">
+                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
+                    <span id="themeIcon"></span>
+                    <span id="themeText">Dark</span>
+                </button>
+                <button class="settings-toggle" onclick="toggleSettings()" title="Open Settings">
+                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M12 1v6m0 6v6m6-12l-4 4m-4 4-4 4m16-4h-6m-6 0H1m18-8l-4 4m-4 4-4 4"/>
+                    </svg>
+                    <span>Settings</span>
+                </button>
+            </div>
         </header>
 
         <!-- Tab Navigation -->
@@ -36,7 +52,7 @@
                                     <span class="tooltip-text">The name of the part or product being quoted</span>
                                 </span>
                             </label>
-                            <input type="text" id="part_name" value="New Part">
+                            <input type="text" id="part_name" placeholder="New Part">
                         </div>
                         <div class="form-group">
                             <label>Revision:
@@ -45,7 +61,7 @@
                                     <span class="tooltip-text">Version number of this part design (e.g., V1, V2, Rev A)</span>
                                 </span>
                             </label>
-                            <input type="text" id="revision" value="V1">
+                            <input type="text" id="revision" placeholder="V1">
                         </div>
                         <div class="form-group">
                             <label>Prepared By:
@@ -54,7 +70,7 @@
                                     <span class="tooltip-text">Name of the person creating this quote</span>
                                 </span>
                             </label>
-                            <input type="text" id="prepared_by" value="Marcus">
+                            <input type="text" id="prepared_by" placeholder="Your Name">
                         </div>
                     </div>
                 </div>
@@ -108,14 +124,85 @@
                                 <option value="PVDF">PVDF (Polyvinylidene Fluoride)</option>
                             </select>
                         </div>
+                        <!-- Enhanced Material Cost Presets -->
+                        <div class="material-presets-section">
+                            <h4 style="margin-bottom: 16px; color: var(--text-primary);">
+                                Material Cost Presets (Formtech NZ)
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Filter by material type, manufacturer, diameter, and spool size. Prices from Formtech NZ catalog.</span>
+                                </span>
+                            </h4>
+
+                            <div class="preset-filters">
+                                <div class="form-group">
+                                    <label>Material Type:</label>
+                                    <select id="preset_material_type" onchange="updateMaterialPresetFilters()">
+                                        <option value="All">All Materials</option>
+                                        <option value="PLA">PLA</option>
+                                        <option value="rPLA">rPLA (Recycled)</option>
+                                        <option value="PETG">PETG</option>
+                                        <option value="PETG-CF">PETG-CF (Carbon Fiber)</option>
+                                        <option value="ABS">ABS</option>
+                                        <option value="ASA">ASA</option>
+                                        <option value="TPU">TPU (Flexible)</option>
+                                        <option value="Nylon">Nylon</option>
+                                        <option value="PC">Polycarbonate</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Manufacturer:</label>
+                                    <select id="preset_manufacturer" onchange="updateMaterialPresetFilters()">
+                                        <option value="All">All Brands</option>
+                                        <option value="Kiwifil">Kiwifil (NZ 🇳🇿)</option>
+                                        <option value="3DXTech">3DXTech (USA)</option>
+                                        <option value="Polymaker">Polymaker</option>
+                                        <option value="Fillamentum">Fillamentum</option>
+                                        <option value="Prusa">Prusa</option>
+                                        <option value="Azurefilm">Azurefilm</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Diameter:</label>
+                                    <select id="preset_diameter" onchange="updateMaterialPresetFilters()">
+                                        <option value="">All</option>
+                                        <option value="1.75" selected>1.75mm</option>
+                                        <option value="2.85">2.85mm</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Spool Size:</label>
+                                    <select id="preset_spool_size" onchange="updateMaterialPresetFilters()">
+                                        <option value="">All</option>
+                                        <option value="0.5">0.5kg</option>
+                                        <option value="1.0" selected>1.0kg</option>
+                                        <option value="2.0">2.0kg</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Select Product:</label>
+                                <select id="preset_product">
+                                    <option value="">-- Select Product --</option>
+                                </select>
+                            </div>
+
+                            <button class="btn btn-secondary" onclick="applyMaterialPreset()" style="width: 100%; margin-top: 8px;">
+                                Apply Selected Preset
+                            </button>
+                        </div>
                         <div class="form-group">
-                            <label>Filament Cost ($/kg):
+                            <label>Filament Cost (NZD/kg):
                                 <span class="tooltip">
                                     <span class="tooltip-icon">?</span>
                                     <span class="tooltip-text">Cost per kilogram of filament material (check your supplier pricing)</span>
                                 </span>
                             </label>
-                            <input type="number" id="filament_cost" value="40.00" step="0.01" min="0">
+                            <input type="number" id="filament_cost" placeholder="40.00" step="0.01" min="0">
                         </div>
                         <div class="form-group">
                             <label>Filament Required (g):
@@ -124,7 +211,7 @@
                                     <span class="tooltip-text">Total grams of filament needed for this print (from slicer software)</span>
                                 </span>
                             </label>
-                            <input type="number" id="filament_required" value="34.78" step="0.01" min="0">
+                            <input type="number" id="filament_required" placeholder="34.78" step="0.01" min="0">
                         </div>
                         <div class="form-group">
                             <label>Total Print Time (hours):
@@ -133,7 +220,7 @@
                                     <span class="tooltip-text">Estimated print duration in hours (from slicer software)</span>
                                 </span>
                             </label>
-                            <input type="number" id="print_time" value="4.00" step="0.01" min="0">
+                            <input type="number" id="print_time" placeholder="4.00" step="0.01" min="0">
                         </div>
                         <div class="form-group">
                             <label>Labor Required (minutes):
@@ -142,7 +229,7 @@
                                     <span class="tooltip-text">Time needed for setup, removal, cleanup, and post-processing (minutes)</span>
                                 </span>
                             </label>
-                            <input type="number" id="labor_time" value="30" step="1" min="0">
+                            <input type="number" id="labor_time" placeholder="30" step="1" min="0">
                         </div>
                     </div>
                 </div>
@@ -204,7 +291,7 @@
                                 <span class="tooltip-text">Estimated cost to ship this item to the customer (carrier rates + packaging)</span>
                             </span>
                         </label>
-                        <input type="number" id="shipping_cost" value="0.00" step="0.01" min="0">
+                        <input type="number" id="shipping_cost" placeholder="0.00" step="0.01" min="0">
                     </div>
                 </div>
             </div>
@@ -221,7 +308,7 @@
                                     <span class="tooltip-text">Initial purchase price of the 3D printer</span>
                                 </span>
                             </label>
-                            <input type="number" id="printer_cost" value="1000.00" step="0.01" min="0">
+                            <input type="number" id="printer_cost" placeholder="1000.00" step="0.01" min="0">
                         </div>
                         <div class="form-group">
                             <label>Additional Upfront Cost ($):
@@ -230,7 +317,7 @@
                                     <span class="tooltip-text">Other upfront costs like enclosures, upgrades, or setup expenses</span>
                                 </span>
                             </label>
-                            <input type="number" id="upfront_cost" value="0.00" step="0.01" min="0">
+                            <input type="number" id="upfront_cost" placeholder="0.00" step="0.01" min="0">
                         </div>
                         <div class="form-group">
                             <label>Annual Maintenance ($/year):
@@ -239,7 +326,7 @@
                                     <span class="tooltip-text">Yearly cost for nozzles, belts, bearings, and other wear parts</span>
                                 </span>
                             </label>
-                            <input type="number" id="annual_maintenance" value="75.00" step="0.01" min="0">
+                            <input type="number" id="annual_maintenance" placeholder="75.00" step="0.01" min="0">
                         </div>
                         <div class="form-group">
                             <label>Expected Printer Life (years):
@@ -248,7 +335,7 @@
                                     <span class="tooltip-text">How many years you expect the printer to remain productive</span>
                                 </span>
                             </label>
-                            <input type="number" id="printer_life" value="3.00" step="0.01" min="0">
+                            <input type="number" id="printer_life" placeholder="3.00" step="0.01" min="0">
                         </div>
                         <div class="form-group">
                             <label>Average Uptime (%):
@@ -257,7 +344,7 @@
                                     <span class="tooltip-text">Percentage of time the printer is actively printing (not idle or offline). 50% = 12 hours/day average</span>
                                 </span>
                             </label>
-                            <input type="number" id="average_uptime" value="50.00" step="0.01" min="0" max="100">
+                            <input type="number" id="average_uptime" placeholder="50.00" step="0.01" min="0" max="100">
                         </div>
                         <div class="form-group">
                             <label>Calculated Print Rate ($/hour):
@@ -281,7 +368,7 @@
                                     <span class="tooltip-text">Average watts consumed during printing. Typical range: 200-400W. Check printer specs or measure with power meter</span>
                                 </span>
                             </label>
-                            <input type="number" id="power_consumption" value="250.00" step="1" min="0" max="5000">
+                            <input type="number" id="power_consumption" placeholder="250" step="1" min="0" max="5000">
                         </div>
                         <div class="form-group">
                             <label>Electricity Rate Cost ($/kWh):
@@ -290,7 +377,7 @@
                                     <span class="tooltip-text">Your electricity cost per kilowatt-hour (check your utility bill)</span>
                                 </span>
                             </label>
-                            <input type="number" id="electricity_rate" value="0.3000" step="0.0001" min="0">
+                            <input type="number" id="electricity_rate" placeholder="0.30" step="0.0001" min="0">
                         </div>
                         <div class="form-group">
                             <label>Electricity Daily Fixed Rate ($/day):
@@ -299,7 +386,7 @@
                                     <span class="tooltip-text">Daily supply charge or fixed daily fee from your electricity provider</span>
                                 </span>
                             </label>
-                            <input type="number" id="electricity_daily" value="1.50" step="0.01" min="0">
+                            <input type="number" id="electricity_daily" placeholder="1.50" step="0.01" min="0">
                         </div>
                     </div>
                 </div>
@@ -314,7 +401,7 @@
                                     <span class="tooltip-text">Accounts for material waste, failed prints, supports. 1.1 = 10% overhead, 1.2 = 20% overhead</span>
                                 </span>
                             </label>
-                            <input type="number" id="efficiency_factor" value="1.10" step="0.01" min="1">
+                            <input type="number" id="efficiency_factor" placeholder="1.10" step="0.01" min="1">
                         </div>
                         <div class="form-group">
                             <label>Labor Hourly Rate ($/hour):
@@ -323,7 +410,7 @@
                                     <span class="tooltip-text">Your hourly rate for manual work (setup, post-processing, quality checks)</span>
                                 </span>
                             </label>
-                            <input type="number" id="labor_rate" value="20.00" step="0.01" min="0">
+                            <input type="number" id="labor_rate" placeholder="20.00" step="0.01" min="0">
                         </div>
                     </div>
                 </div>
@@ -331,6 +418,44 @@
 
             <!-- Results Tab -->
             <div id="results-tab" class="tab-pane">
+                <!-- Quick Summary Card -->
+                <div class="summary-card">
+                    <div class="summary-header">
+                        <h3>At-a-Glance Summary</h3>
+                        <button class="collapse-btn" onclick="toggleSummary()" title="Collapse/Expand">−</button>
+                    </div>
+                    <div class="summary-content" id="summary-content">
+                        <div class="summary-main">
+                            <div class="summary-item-large">
+                                <span class="summary-label">Total Cost</span>
+                                <span class="summary-value-large" id="summary_total_cost">NZD $0.00</span>
+                            </div>
+                            <div class="summary-item-large">
+                                <span class="summary-label">Recommended Price (70%)</span>
+                                <span class="summary-value-large highlight" id="summary_recommended_price">NZD $0.00</span>
+                            </div>
+                        </div>
+                        <div class="summary-breakdown">
+                            <div class="summary-item-small">
+                                <span class="summary-label">Materials</span>
+                                <span class="summary-value" id="summary_materials">NZD $0.00</span>
+                            </div>
+                            <div class="summary-item-small">
+                                <span class="summary-label">Labor</span>
+                                <span class="summary-value" id="summary_labor">NZD $0.00</span>
+                            </div>
+                            <div class="summary-item-small">
+                                <span class="summary-label">Machine</span>
+                                <span class="summary-value" id="summary_machine">NZD $0.00</span>
+                            </div>
+                            <div class="summary-item-small">
+                                <span class="summary-label">Packaging</span>
+                                <span class="summary-value" id="summary_packaging">NZD $0.00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="section">
                     <h2>Cost Breakdown</h2>
                     <div class="results-grid">
@@ -381,7 +506,7 @@
                                 </span>
                             </label>
                             <div class="custom-margin-controls">
-                                <input type="number" id="custom_margin" value="75" min="0" max="99" step="1">
+                                <input type="number" id="custom_margin" placeholder="75" min="0" max="99" step="1">
                                 <span class="percent-symbol">%</span>
                                 <span id="result_price_custom" class="price-value">$0.00</span>
                             </div>
@@ -393,12 +518,133 @@
 
         <!-- Action Buttons -->
         <div class="action-bar">
-            <button class="btn btn-secondary" onclick="saveConfig()">Save Config</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('load-file').click()">Load Config</button>
+            <button class="btn btn-secondary" onclick="saveConfig()" title="Save configuration (Ctrl+S)">Save Config</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('load-file').click()" title="Load configuration (Ctrl+L)">Load Config</button>
             <input type="file" id="load-file" accept=".json" style="display: none;" onchange="loadConfig(event)">
-            <button class="btn btn-secondary" onclick="exportToExcel()">Export to Excel</button>
+            <button class="btn btn-secondary" onclick="exportToExcel()" title="Export to Excel (Ctrl+E)">Export to Excel</button>
             <div class="spacer"></div>
-            <button class="btn btn-primary" onclick="calculate()">Recalculate</button>
+            <button class="btn btn-primary" onclick="calculate()" title="Recalculate pricing (Ctrl+R)">Recalculate</button>
+        </div>
+    </div>
+
+    <!-- Settings Sidebar -->
+    <div class="settings-overlay" id="settings-overlay" onclick="toggleSettings()"></div>
+    <div class="settings-sidebar" id="settings-sidebar">
+        <div class="settings-header">
+            <h2>⚙️ Settings</h2>
+            <button class="close-btn" onclick="toggleSettings()" title="Close">✕</button>
+        </div>
+
+        <div class="settings-content">
+            <!-- Regional Settings -->
+            <div class="settings-section">
+                <h3>📍 Regional</h3>
+                <div class="form-group">
+                    <label>Location:</label>
+                    <input type="text" id="setting_location" value="Christchurch, NZ">
+                </div>
+                <div class="form-group">
+                    <label>Currency:</label>
+                    <select id="setting_currency">
+                        <option value="NZD" selected>NZD (New Zealand Dollar)</option>
+                        <option value="AUD">AUD (Australian Dollar)</option>
+                        <option value="USD">USD (US Dollar)</option>
+                        <option value="EUR">EUR (Euro)</option>
+                        <option value="GBP">GBP (British Pound)</option>
+                        <option value="CAD">CAD (Canadian Dollar)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="setting_show_service_area" checked>
+                        Show service area badge
+                    </label>
+                </div>
+            </div>
+
+            <!-- Material Preferences -->
+            <div class="settings-section">
+                <h3>🧵 Material Preferences</h3>
+                <div class="form-group">
+                    <label>Default Supplier:</label>
+                    <select id="setting_supplier">
+                        <option value="Formtech NZ" selected>Formtech NZ</option>
+                        <option value="Custom">Custom</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Preferred Manufacturer:</label>
+                    <select id="setting_manufacturer">
+                        <option value="All" selected>All Manufacturers</option>
+                        <option value="Kiwifil">Kiwifil (NZ)</option>
+                        <option value="3DXTech">3DXTech</option>
+                        <option value="Polymaker">Polymaker</option>
+                        <option value="Fillamentum">Fillamentum</option>
+                        <option value="Prusa">Prusa</option>
+                        <option value="Azurefilm">Azurefilm</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="setting_show_recycled" checked>
+                        Show recycled materials
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="setting_nz_made_only">
+                        Show NZ-made only
+                    </label>
+                </div>
+            </div>
+
+            <!-- Display Preferences -->
+            <div class="settings-section">
+                <h3>🎨 Display</h3>
+                <div class="form-group">
+                    <label>Units:</label>
+                    <select id="setting_units">
+                        <option value="metric" selected>Metric (g, mm)</option>
+                        <option value="imperial">Imperial (oz, in)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Decimal Places:</label>
+                    <select id="setting_decimal_places">
+                        <option value="2" selected>2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="setting_auto_calculate" checked>
+                        Auto-calculate on input change
+                    </label>
+                </div>
+            </div>
+
+            <!-- Export Settings -->
+            <div class="settings-section">
+                <h3>📤 Export</h3>
+                <div class="form-group">
+                    <label>Company Name:</label>
+                    <input type="text" id="setting_company_name" placeholder="Your Company Name">
+                </div>
+            </div>
+
+            <!-- Advanced -->
+            <div class="settings-section">
+                <h3>⚡ Advanced</h3>
+                <button class="btn btn-danger" onclick="resetSettings()" style="width: 100%;">
+                    Reset All Settings
+                </button>
+            </div>
+        </div>
+
+        <div class="settings-footer">
+            <button class="btn btn-secondary" onclick="toggleSettings()">Cancel</button>
+            <button class="btn btn-primary" onclick="applySettings()">Save Settings</button>
         </div>
     </div>
 
