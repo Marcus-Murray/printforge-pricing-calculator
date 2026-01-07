@@ -136,7 +136,10 @@ function collectFormData() {
         electricity_daily: parseFloat(document.getElementById('electricity_daily').value) || 0,
         efficiency_factor: parseFloat(document.getElementById('efficiency_factor').value) || 1,
         labor_rate: parseFloat(document.getElementById('labor_rate').value) || 0,
-        custom_margin: parseFloat(document.getElementById('custom_margin').value) || 75
+        custom_margin: parseFloat(document.getElementById('custom_margin').value) || 75,
+
+        // Quote Notes
+        quote_notes: document.getElementById('quote_notes')?.value || ''
     };
 }
 
@@ -234,7 +237,8 @@ async function calculate() {
                 materialCost: result.material_cost,
                 laborCost: result.labor_cost,
                 machineCost: result.machine_cost_total,
-                packagingCost: result.packaging_cost
+                packagingCost: result.packaging_cost,
+                notes: data.quote_notes
             });
 
             showMessage('Calculation complete!', 'success');
@@ -1360,6 +1364,7 @@ function addToHistory(quoteData) {
         weight: parseFloat(quoteData.weight) || 0,
         printTime: parseFloat(quoteData.printTime) || 0,
         totalCost: parseFloat(quoteData.totalCost) || 0,
+        notes: quoteData.notes || '',
         breakdown: {
             material: parseFloat(quoteData.materialCost) || 0,
             labor: parseFloat(quoteData.laborCost) || 0,
@@ -1544,6 +1549,10 @@ function loadHistoryEntry(entryId) {
     document.getElementById('material_type').value = entry.material;
     document.getElementById('filament_required').value = entry.weight;
     document.getElementById('print_time').value = entry.printTime;
+
+    // Load notes if present
+    const notesField = document.getElementById('quote_notes');
+    if (notesField) notesField.value = entry.notes || '';
 
     // Switch to basic tab
     const basicTab = document.querySelector('[data-tab="basic"]');
@@ -1842,6 +1851,26 @@ async function exportToPDF() {
             yPos = doc.lastAutoTable.finalY + 12;
         }
 
+        // Add notes section if present
+        const notes = data.quote_notes;
+        if (notes && notes.trim()) {
+            yPos += 6;
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...primaryColor);
+            doc.text('Quote Notes', margin, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...darkGray);
+
+            // Split long text into lines
+            const splitNotes = doc.splitTextToSize(notes, pageWidth - (margin * 2));
+            doc.text(splitNotes, margin, yPos);
+            yPos += splitNotes.length * 6;
+        }
+
         // Footer
         const footerY = doc.internal.pageSize.height - 20;
         doc.setDrawColor(...lightGray);
@@ -1965,4 +1994,150 @@ async function exportBatchToPDF() {
         console.error('Batch PDF export error:', error);
         showMessage('Batch PDF export failed: ' + error.message, 'error');
     }
+}
+
+// ============================================================
+// Quote Comparison Tool
+// ============================================================
+
+let comparisonSlots = [];
+let comparisonIdCounter = 0;
+
+function addCompareSlot() {
+    if (comparisonSlots.length >= 3) {
+        showMessage('Maximum 3 comparison slots', 'error');
+        return;
+    }
+
+    const slotId = ++comparisonIdCounter;
+    const slotData = {
+        id: slotId,
+        name: `Option ${slotId}`,
+        material: 'PLA',
+        weight: 50,
+        printTime: 2,
+        cost: null
+    };
+
+    comparisonSlots.push(slotData);
+    renderComparisonSlots();
+}
+
+function renderComparisonSlots() {
+    const grid = document.getElementById('comparison-grid');
+
+    if (comparisonSlots.length === 0) {
+        grid.innerHTML = '<p class="empty-state">Click "Add Option" to start comparing quotes</p>';
+        return;
+    }
+
+    grid.innerHTML = comparisonSlots.map(slot => `
+        <div class="comparison-slot" data-slot-id="${slot.id}">
+            <div class="slot-header">
+                <input type="text" value="${slot.name}"
+                       onchange="updateSlotName(${slot.id}, this.value)"
+                       class="slot-name-input">
+                <button class="btn-icon btn-delete" onclick="removeCompareSlot(${slot.id})" title="Remove">✖</button>
+            </div>
+
+            <div class="slot-inputs">
+                <div class="form-group">
+                    <label>Material:</label>
+                    <select onchange="updateSlotField(${slot.id}, 'material', this.value)">
+                        <option value="PLA" ${slot.material === 'PLA' ? 'selected' : ''}>PLA</option>
+                        <option value="PETG" ${slot.material === 'PETG' ? 'selected' : ''}>PETG</option>
+                        <option value="ABS" ${slot.material === 'ABS' ? 'selected' : ''}>ABS</option>
+                        <option value="TPU" ${slot.material === 'TPU' ? 'selected' : ''}>TPU</option>
+                        <option value="Nylon" ${slot.material === 'Nylon' ? 'selected' : ''}>Nylon</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Weight (g):</label>
+                    <input type="number" value="${slot.weight}" step="0.1"
+                           onchange="updateSlotField(${slot.id}, 'weight', this.value)">
+                </div>
+
+                <div class="form-group">
+                    <label>Print Time (h):</label>
+                    <input type="number" value="${slot.printTime}" step="0.1"
+                           onchange="updateSlotField(${slot.id}, 'printTime', this.value)">
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="calculateCompareSlot(${slot.id})" style="width: 100%; margin-top: 12px;">
+                Calculate
+            </button>
+
+            <div class="slot-results" id="slot-results-${slot.id}">
+                ${slot.cost !== null ? `
+                    <div class="result-card">
+                        <div class="result-label">Total Cost:</div>
+                        <div class="result-value">NZD $${slot.cost.toFixed(2)}</div>
+                    </div>
+                ` : '<p class="empty-state">Click Calculate</p>'}
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateSlotField(slotId, field, value) {
+    const slot = comparisonSlots.find(s => s.id === slotId);
+    if (slot) {
+        slot[field] = field === 'material' ? value : parseFloat(value);
+        slot.cost = null; // Reset cost when inputs change
+        renderComparisonSlots();
+    }
+}
+
+function updateSlotName(slotId, name) {
+    const slot = comparisonSlots.find(s => s.id === slotId);
+    if (slot) slot.name = name;
+}
+
+async function calculateCompareSlot(slotId) {
+    const slot = comparisonSlots.find(s => s.id === slotId);
+    if (!slot) return;
+
+    // Collect base form data
+    const baseData = collectFormData();
+
+    // Override with slot-specific values
+    const slotData = {
+        ...baseData,
+        material_type: slot.material,
+        filament_required: slot.weight,
+        print_time: slot.printTime
+    };
+
+    try {
+        const response = await fetch('/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(slotData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            slot.cost = result.total_cost;
+            renderComparisonSlots();
+            showMessage(`${slot.name} calculated`, 'success');
+        } else {
+            showMessage('Calculation failed: ' + result.error, 'error');
+        }
+    } catch (error) {
+        showMessage('Error: ' + error.message, 'error');
+    }
+}
+
+function removeCompareSlot(slotId) {
+    comparisonSlots = comparisonSlots.filter(s => s.id !== slotId);
+    renderComparisonSlots();
+}
+
+function clearComparison() {
+    if (!confirm('Clear all comparison slots?')) return;
+    comparisonSlots = [];
+    renderComparisonSlots();
 }

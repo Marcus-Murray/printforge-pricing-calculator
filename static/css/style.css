@@ -1529,3 +1529,107 @@ select:hover {
     padding: 4px 8px;
     font-size: 12px;
 }
+
+/* ============================================================
+   Quote Comparison Styles
+   ============================================================ */
+
+.compare-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.compare-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.comparison-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.comparison-slot {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.slot-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.slot-name-input {
+    flex: 1;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 8px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    color: var(--text-primary);
+}
+
+.slot-inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.slot-results {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(255, 107, 53, 0.05);
+    border-radius: 6px;
+}
+
+.result-card {
+    text-align: center;
+}
+
+.result-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.result-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+/* ============================================================
+   Quote Notes Styles
+   ============================================================ */
+
+.notes-textarea {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 14px;
+    resize: vertical;
+    min-height: 100px;
+}
+
+.notes-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.notes-textarea::placeholder {
+    color: var(--text-secondary);
+}
