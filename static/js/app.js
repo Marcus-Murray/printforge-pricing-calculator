@@ -2203,7 +2203,7 @@ async function calculateWidget() {
     const printTime = parseFloat(document.getElementById('widget_time').value) || 2;
     const quantity = parseInt(document.getElementById('widget_quantity').value) || 1;
 
-    // Build minimal widget data without requiring all main form fields
+    // Build complete widget data with all required defaults
     const widgetData = {
         material_type: material,
         filament_required: weight,
@@ -2213,7 +2213,20 @@ async function calculateWidget() {
         labor_time: 30,
         markup: 70,
         hardware_items: [],
-        packaging_items: []
+        packaging_items: [],
+        // Required backend fields with defaults
+        filament_cost: 40.0,
+        shipping_cost: 0.0,
+        printer_cost: 1000.0,
+        upfront_cost: 0.0,
+        annual_maintenance: 75.0,
+        printer_life: 3.0,
+        average_uptime: 50.0,
+        power_consumption: 250.0,
+        electricity_rate: 0.30,
+        electricity_daily: 1.50,
+        efficiency_factor: 1.1,
+        labor_rate: 20.0
     };
 
     try {
