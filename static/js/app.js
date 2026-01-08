@@ -2249,12 +2249,17 @@ async function calculateWidget() {
 
         widgetLastResult = result;
 
-        const materialCost = result.material_cost * quantity;
-        const printCost = result.print_cost * quantity;
-        const total = materialCost + printCost;
+        const materialCost = result.material_cost || 0;
+        const laborCost = result.labor_cost || 0;
+        const machineCost = result.machine_cost_total || 0;
+        const packagingCost = result.packaging_cost || 0;
 
-        document.getElementById('widget_material_cost').textContent = `$${materialCost.toFixed(2)}`;
-        document.getElementById('widget_print_cost').textContent = `$${printCost.toFixed(2)}`;
+        const printCost = laborCost + machineCost;
+        const totalPerUnit = materialCost + printCost + packagingCost;
+        const total = totalPerUnit * quantity;
+
+        document.getElementById('widget_material_cost').textContent = `$${(materialCost * quantity).toFixed(2)}`;
+        document.getElementById('widget_print_cost').textContent = `$${(printCost * quantity).toFixed(2)}`;
         document.getElementById('widget_total').textContent = `$${total.toFixed(2)}`;
 
     } catch (error) {
