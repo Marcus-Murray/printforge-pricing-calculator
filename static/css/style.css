@@ -1795,3 +1795,48 @@ select:hover {
 .alert-close:hover {
     opacity: 1;
 }
+
+/* Print Time Estimator Styles */
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.estimator-content {
+    transition: all 0.3s ease;
+}
+
+.estimator-result {
+    background: var(--bg-secondary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.result-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.result-value {
+    flex: 1;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.estimator-result .btn {
+    white-space: nowrap;
+}
+
+.estimator-result .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}

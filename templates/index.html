@@ -268,6 +268,67 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Print Time Estimator -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>⏱️ Print Time Estimator</h2>
+                        <button class="collapse-btn" onclick="toggleEstimator()" id="estimator-collapse-btn" title="Collapse/Expand">−</button>
+                    </div>
+                    <div id="estimator-content" class="estimator-content">
+                        <p class="info-text">Estimate print time from slicer parameters if you don't have the exact duration.</p>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Model Volume (cm³):
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">Volume of your model in cubic centimeters</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="est_volume" placeholder="50" step="0.1" min="0" oninput="estimatePrintTime()">
+                            </div>
+                            <div class="form-group">
+                                <label>Layer Height (mm):
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">Layer height setting from slicer (e.g., 0.2mm)</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="est_layer_height" placeholder="0.2" step="0.01" min="0.01" oninput="estimatePrintTime()">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Infill Density (%):
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">Percentage of internal infill (e.g., 20%)</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="est_infill" placeholder="20" min="0" max="100" oninput="estimatePrintTime()">
+                            </div>
+                            <div class="form-group">
+                                <label>Print Speed (mm/s):
+                                    <span class="tooltip">
+                                        <span class="tooltip-icon">?</span>
+                                        <span class="tooltip-text">Average print speed from slicer (typically 40-60mm/s)</span>
+                                    </span>
+                                </label>
+                                <input type="number" id="est_speed" placeholder="50" min="1" oninput="estimatePrintTime()">
+                            </div>
+                        </div>
+
+                        <div class="estimator-result">
+                            <div class="result-label">Estimated Print Time:</div>
+                            <div class="result-value" id="estimated_time">—</div>
+                            <button class="btn btn-primary" onclick="useEstimatedTime()" id="use-estimate-btn" disabled>
+                                ✓ Use This Time
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Hardware Tab -->

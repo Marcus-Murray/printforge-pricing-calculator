@@ -2312,3 +2312,62 @@ function dismissPriceAlert() {
     const banner = document.getElementById('price-alert-banner');
     banner.style.display = 'none';
 }
+
+// ==================== Print Time Estimator ====================
+
+let estimatedPrintTime = null;
+
+function toggleEstimator() {
+    const content = document.getElementById('estimator-content');
+    const btn = document.getElementById('estimator-collapse-btn');
+    const isCollapsed = content.style.display === 'none';
+
+    content.style.display = isCollapsed ? 'block' : 'none';
+    btn.textContent = isCollapsed ? '−' : '+';
+}
+
+function estimatePrintTime() {
+    const volume = parseFloat(document.getElementById('est_volume').value) || 0;
+    const layerHeight = parseFloat(document.getElementById('est_layer_height').value) || 0;
+    const infill = parseFloat(document.getElementById('est_infill').value) || 0;
+    const speed = parseFloat(document.getElementById('est_speed').value) || 0;
+
+    // Check if all required fields are filled
+    if (volume <= 0 || layerHeight <= 0 || speed <= 0) {
+        document.getElementById('estimated_time').textContent = '—';
+        document.getElementById('use-estimate-btn').disabled = true;
+        estimatedPrintTime = null;
+        return;
+    }
+
+    // Simplified print time estimation formula
+    // This is a rough approximation based on common factors
+    const layerCount = (volume / (layerHeight * 10)); // Approximate layer count
+    const infillFactor = 1 + (infill / 100); // Infill increases print time
+    const baseTime = (layerCount * layerHeight * infillFactor) / (speed / 60); // Convert to hours
+
+    // Apply overhead for travel moves, retractions, etc. (typically 20-30%)
+    const estimatedHours = baseTime * 1.25;
+
+    estimatedPrintTime = estimatedHours;
+
+    // Format the result
+    const hours = Math.floor(estimatedHours);
+    const minutes = Math.round((estimatedHours - hours) * 60);
+
+    document.getElementById('estimated_time').textContent =
+        `${hours}h ${minutes}m (${estimatedHours.toFixed(2)} hours)`;
+    document.getElementById('use-estimate-btn').disabled = false;
+}
+
+function useEstimatedTime() {
+    if (estimatedPrintTime === null) return;
+
+    document.getElementById('print_time').value = estimatedPrintTime.toFixed(2);
+    showMessage(`Print time set to ${estimatedPrintTime.toFixed(2)} hours`, 'success');
+
+    // Trigger auto-calculate if enabled
+    if (appSettings.display.autoCalculate) {
+        autoCalculate();
+    }
+}
