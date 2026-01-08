@@ -589,6 +589,13 @@
                             </select>
                         </div>
                         <div class="form-group">
+                            <label>Show:</label>
+                            <select id="history_favorite_filter" onchange="updateHistoryDisplay()">
+                                <option value="all">All Quotes</option>
+                                <option value="favorites">⭐ Favorites Only</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
                             <label>Chart Type:</label>
                             <select id="history_chart_type" onchange="updateHistoryChart()">
                                 <option value="line" selected>Line Chart</option>
@@ -629,6 +636,7 @@
                         <table class="history-table">
                             <thead>
                                 <tr>
+                                    <th style="width: 50px;">⭐</th>
                                     <th>Date</th>
                                     <th>Part Name</th>
                                     <th>Material</th>
@@ -640,7 +648,7 @@
                             </thead>
                             <tbody id="history-tbody">
                                 <tr>
-                                    <td colspan="7" class="empty-state">No quotes saved yet. Calculate a quote to start tracking history.</td>
+                                    <td colspan="8" class="empty-state">No quotes saved yet. Calculate a quote to start tracking history.</td>
                                 </tr>
                             </tbody>
                         </table>

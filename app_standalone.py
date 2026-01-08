@@ -35,7 +35,7 @@ def open_app_window():
                 subprocess.Popen([
                     edge_path,
                     "--app=" + url,
-                    "--window-size=1200,900",
+                    "--window-size=1600,1100",
                     "--disable-features=TranslateUI",
                     "--no-first-run",
                     "--no-default-browser-check"
@@ -56,7 +56,7 @@ def open_app_window():
                 subprocess.Popen([
                     chrome_path,
                     "--app=" + url,
-                    "--window-size=1200,900"
+                    "--window-size=1600,1100"
                 ])
                 return
             except:

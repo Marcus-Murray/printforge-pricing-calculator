@@ -1365,6 +1365,7 @@ function addToHistory(quoteData) {
         printTime: parseFloat(quoteData.printTime) || 0,
         totalCost: parseFloat(quoteData.totalCost) || 0,
         notes: quoteData.notes || '',
+        starred: false,
         breakdown: {
             material: parseFloat(quoteData.materialCost) || 0,
             labor: parseFloat(quoteData.laborCost) || 0,
@@ -1393,19 +1394,35 @@ function updateHistoryDisplay() {
 
 // Update history table
 function updateHistoryTable() {
+    const favoriteFilter = document.getElementById('history_favorite_filter')?.value || 'all';
     const tbody = document.getElementById('history-tbody');
 
-    if (quoteHistory.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="empty-state">No quotes saved yet. Calculate a quote to start tracking history.</td></tr>';
+    // Filter data based on favorites
+    let displayData = quoteHistory;
+    if (favoriteFilter === 'favorites') {
+        displayData = quoteHistory.filter(q => q.starred);
+    }
+
+    if (displayData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="empty-state">No quotes found</td></tr>';
         return;
     }
 
-    tbody.innerHTML = quoteHistory.slice(0, 20).map(entry => {
+    tbody.innerHTML = displayData.slice(0, 20).map(entry => {
         const date = new Date(entry.timestamp);
         const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const starIcon = entry.starred ? '⭐' : '☆';
+        const starClass = entry.starred ? 'starred' : '';
 
         return `
             <tr>
+                <td>
+                    <button class="star-btn ${starClass}"
+                            onclick="toggleStarQuote(${entry.id})"
+                            title="${entry.starred ? 'Remove from favorites' : 'Add to favorites'}">
+                        ${starIcon}
+                    </button>
+                </td>
                 <td>${formattedDate}</td>
                 <td>${entry.partName}</td>
                 <td>${entry.material}</td>
@@ -1428,15 +1445,29 @@ function updateHistoryTable() {
 // Update statistics
 function updateHistoryStats() {
     const totalQuotes = quoteHistory.length;
+    const starredCount = quoteHistory.filter(q => q.starred).length;
     const costs = quoteHistory.map(q => q.totalCost);
     const avgCost = costs.length > 0 ? costs.reduce((a, b) => a + b, 0) / costs.length : 0;
     const maxCost = costs.length > 0 ? Math.max(...costs) : 0;
     const minCost = costs.length > 0 ? Math.min(...costs) : 0;
 
-    document.getElementById('stat_total_quotes').textContent = totalQuotes;
+    document.getElementById('stat_total_quotes').textContent = `${totalQuotes} (${starredCount} ⭐)`;
     document.getElementById('stat_avg_cost').textContent = `NZD $${avgCost.toFixed(2)}`;
     document.getElementById('stat_max_cost').textContent = `NZD $${maxCost.toFixed(2)}`;
     document.getElementById('stat_min_cost').textContent = `NZD $${minCost.toFixed(2)}`;
+}
+
+// Toggle star status
+function toggleStarQuote(entryId) {
+    const entry = quoteHistory.find(q => q.id === entryId);
+    if (!entry) return;
+
+    entry.starred = !entry.starred;
+    saveHistory();
+    updateHistoryDisplay();
+
+    const message = entry.starred ? 'Added to favorites' : 'Removed from favorites';
+    showMessage(message, 'success');
 }
 
 // Update chart

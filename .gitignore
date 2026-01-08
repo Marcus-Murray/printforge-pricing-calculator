@@ -71,3 +71,4 @@ tmp/
 build/
 dist/*.exe
 dist/*.app
+convert_icon.py

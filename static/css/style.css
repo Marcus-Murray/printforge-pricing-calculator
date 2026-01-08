@@ -1633,3 +1633,24 @@ select:hover {
 .notes-textarea::placeholder {
     color: var(--text-secondary);
 }
+
+/* Star Button Styles */
+.star-btn {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.5;
+}
+
+.star-btn:hover {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.star-btn.starred {
+    opacity: 1;
+    color: #FFD700;
+}
