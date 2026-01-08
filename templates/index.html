@@ -658,6 +658,18 @@
 
             <!-- Results Tab -->
             <div id="results-tab" class="tab-pane">
+                <!-- Price Alert Banner -->
+                <div id="price-alert-banner" class="price-alert-banner" style="display: none;">
+                    <div class="alert-content">
+                        <span class="alert-icon">⚠️</span>
+                        <div class="alert-text">
+                            <strong>Price Alert</strong>
+                            <p id="alert-message"></p>
+                        </div>
+                        <button class="alert-close" onclick="dismissPriceAlert()">&times;</button>
+                    </div>
+                </div>
+
                 <!-- Quick Summary Card -->
                 <div class="summary-card">
                     <div class="summary-header">
@@ -839,6 +851,20 @@
                 <div class="form-group">
                     <label>Company Name:</label>
                     <input type="text" id="setting_company_name" placeholder="Your Company Name">
+                </div>
+            </div>
+
+            <!-- Price Alerts -->
+            <div class="settings-section">
+                <h3>⚠️ Price Alerts</h3>
+                <div class="form-group">
+                    <label>Target Price Threshold ($):
+                        <span class="tooltip">
+                            <span class="tooltip-icon">?</span>
+                            <span class="tooltip-text">Get visual warnings when quote total exceeds this amount. Leave blank to disable.</span>
+                        </span>
+                    </label>
+                    <input type="number" id="setting_price_threshold" placeholder="e.g. 100" min="0" step="1">
                 </div>
             </div>
 

@@ -227,6 +227,9 @@ async function calculate() {
             // Update Quick Summary Card
             updateQuickSummary(result);
 
+            // Check price alert
+            checkPriceAlert(result);
+
             // Add to history
             addToHistory({
                 partName: data.part_name,
@@ -632,6 +635,9 @@ function populateSettingsUI() {
 
     // Export
     document.getElementById('setting_company_name').value = appSettings.export.companyName;
+
+    // Price Alerts
+    document.getElementById('setting_price_threshold').value = appSettings.priceThreshold || '';
 }
 
 // Apply settings from UI
@@ -648,6 +654,10 @@ function applySettings() {
 
     // Export
     appSettings.export.companyName = document.getElementById('setting_company_name').value;
+
+    // Price Alerts
+    const threshold = document.getElementById('setting_price_threshold').value;
+    appSettings.priceThreshold = threshold ? parseFloat(threshold) : null;
 
     saveSettings();
     toggleSettings();
@@ -2267,4 +2277,38 @@ function useWidgetInMain() {
     calculate();
 
     showMessage('Values copied to main calculator', 'success');
+}
+
+// ==================== Price Alerts ====================
+
+function checkPriceAlert(result) {
+    const banner = document.getElementById('price-alert-banner');
+    const alertMessage = document.getElementById('alert-message');
+    const threshold = appSettings.priceThreshold;
+
+    // Hide banner if no threshold set
+    if (!threshold || threshold <= 0) {
+        banner.style.display = 'none';
+        return;
+    }
+
+    // Get the quantity from the form
+    const quantity = parseInt(document.getElementById('quantity').value) || 1;
+    const totalPrice = result.price_custom * quantity;
+
+    // Check if price exceeds threshold
+    if (totalPrice > threshold) {
+        const overAmount = totalPrice - threshold;
+        const overPercent = ((overAmount / threshold) * 100).toFixed(1);
+
+        alertMessage.innerHTML = `Quote total <strong>$${totalPrice.toFixed(2)}</strong> exceeds your target price of <strong>$${threshold.toFixed(2)}</strong> by <strong>$${overAmount.toFixed(2)}</strong> (${overPercent}% over).`;
+        banner.style.display = 'block';
+    } else {
+        banner.style.display = 'none';
+    }
+}
+
+function dismissPriceAlert() {
+    const banner = document.getElementById('price-alert-banner');
+    banner.style.display = 'none';
 }
