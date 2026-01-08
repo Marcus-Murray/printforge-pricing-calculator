@@ -2172,3 +2172,99 @@ function clearComparison() {
     comparisonSlots = [];
     renderComparisonSlots();
 }
+
+// ==================== Quick Calculator Widget ====================
+
+let widgetLastResult = null;
+
+function toggleCalculatorWidget() {
+    const modal = document.getElementById('calculator-widget-modal');
+    const isVisible = modal.style.display === 'block';
+    modal.style.display = isVisible ? 'none' : 'block';
+
+    if (!isVisible) {
+        calculateWidget();
+    }
+}
+
+async function calculateWidget() {
+    const material = document.getElementById('widget_material').value;
+    const weight = parseFloat(document.getElementById('widget_weight').value) || 0;
+    const printTime = parseFloat(document.getElementById('widget_time').value) || 0;
+    const quantity = parseInt(document.getElementById('widget_quantity').value) || 1;
+
+    const baseData = collectFormData();
+    const widgetData = {
+        ...baseData,
+        material_type: material,
+        filament_required: weight,
+        print_time: printTime,
+        quantity: quantity
+    };
+
+    try {
+        const response = await fetch('/calculate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(widgetData)
+        });
+
+        if (!response.ok) throw new Error('Calculation failed');
+
+        const result = await response.json();
+        widgetLastResult = result;
+
+        const materialCost = result.material_cost * quantity;
+        const printCost = result.print_cost * quantity;
+        const total = materialCost + printCost;
+
+        document.getElementById('widget_material_cost').textContent = `$${materialCost.toFixed(2)}`;
+        document.getElementById('widget_print_cost').textContent = `$${printCost.toFixed(2)}`;
+        document.getElementById('widget_total').textContent = `$${total.toFixed(2)}`;
+
+    } catch (error) {
+        console.error('Widget calculation error:', error);
+        document.getElementById('widget_material_cost').textContent = '$0.00';
+        document.getElementById('widget_print_cost').textContent = '$0.00';
+        document.getElementById('widget_total').textContent = '$0.00';
+    }
+}
+
+function copyWidgetResult() {
+    const material = document.getElementById('widget_material').value;
+    const weight = parseFloat(document.getElementById('widget_weight').value) || 0;
+    const printTime = parseFloat(document.getElementById('widget_time').value) || 0;
+    const quantity = parseInt(document.getElementById('widget_quantity').value) || 1;
+    const total = document.getElementById('widget_total').textContent;
+
+    const text = `Quick Quote:
+Material: ${material}
+Weight: ${weight}g
+Print Time: ${printTime}h
+Quantity: ${quantity}
+Total: ${total}`;
+
+    navigator.clipboard.writeText(text).then(() => {
+        showMessage('Copied to clipboard!', 'success');
+    }).catch(() => {
+        showMessage('Failed to copy', 'error');
+    });
+}
+
+function useWidgetInMain() {
+    const material = document.getElementById('widget_material').value;
+    const weight = parseFloat(document.getElementById('widget_weight').value) || 0;
+    const printTime = parseFloat(document.getElementById('widget_time').value) || 0;
+    const quantity = parseInt(document.getElementById('widget_quantity').value) || 1;
+
+    document.getElementById('material_type').value = material;
+    document.getElementById('filament_required').value = weight;
+    document.getElementById('print_time').value = printTime;
+    document.getElementById('quantity').value = quantity;
+
+    toggleCalculatorWidget();
+    switchTab('calculator');
+    calculate();
+
+    showMessage('Values copied to main calculator', 'success');
+}

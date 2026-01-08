@@ -1654,3 +1654,76 @@ select:hover {
     opacity: 1;
     color: #FFD700;
 }
+
+/* Calculator Widget Styles */
+.calculator-widget-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transition: all 0.3s ease;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.calculator-widget-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.calculator-widget-content {
+    max-width: 500px;
+}
+
+.widget-form {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.widget-result {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.widget-result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.widget-result-row.widget-total {
+    border-top: 2px solid var(--border-color);
+    margin-top: 8px;
+    padding-top: 12px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.widget-result-row.widget-total span:last-child {
+    color: var(--primary-color);
+}
+
+.widget-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.widget-actions .btn {
+    flex: 1;
+}

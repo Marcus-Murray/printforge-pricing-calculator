@@ -857,6 +857,72 @@
         </div>
     </div>
 
+    <!-- Quick Calculator Widget -->
+    <button class="calculator-widget-btn" onclick="toggleCalculatorWidget()" title="Quick Calculator">
+        🧮
+    </button>
+
+    <!-- Calculator Widget Modal -->
+    <div id="calculator-widget-modal" class="modal">
+        <div class="modal-content calculator-widget-content">
+            <div class="modal-header">
+                <h2>⚡ Quick Calculator</h2>
+                <button class="close-btn" onclick="toggleCalculatorWidget()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="widget-form">
+                    <div class="form-group">
+                        <label>Material:</label>
+                        <select id="widget_material" onchange="calculateWidget()">
+                            <option value="PLA">PLA</option>
+                            <option value="PETG">PETG</option>
+                            <option value="ABS">ABS</option>
+                            <option value="TPU">TPU</option>
+                            <option value="Nylon">Nylon</option>
+                            <option value="ASA">ASA</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Weight (g):</label>
+                        <input type="number" id="widget_weight" value="50" min="1" oninput="calculateWidget()">
+                    </div>
+                    <div class="form-group">
+                        <label>Print Time (hours):</label>
+                        <input type="number" id="widget_time" value="2" min="0.1" step="0.1" oninput="calculateWidget()">
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity:</label>
+                        <input type="number" id="widget_quantity" value="1" min="1" oninput="calculateWidget()">
+                    </div>
+                </div>
+
+                <div class="widget-result">
+                    <div class="widget-result-row">
+                        <span>Material Cost:</span>
+                        <span id="widget_material_cost">$0.00</span>
+                    </div>
+                    <div class="widget-result-row">
+                        <span>Print Cost:</span>
+                        <span id="widget_print_cost">$0.00</span>
+                    </div>
+                    <div class="widget-result-row widget-total">
+                        <span>Total:</span>
+                        <span id="widget_total">$0.00</span>
+                    </div>
+                </div>
+
+                <div class="widget-actions">
+                    <button class="btn btn-secondary" onclick="copyWidgetResult()">
+                        📋 Copy Result
+                    </button>
+                    <button class="btn btn-primary" onclick="useWidgetInMain()">
+                        ✓ Use in Main Calculator
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
 </html>
