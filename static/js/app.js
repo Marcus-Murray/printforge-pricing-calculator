@@ -1421,7 +1421,7 @@ function updateHistoryTable() {
     tbody.innerHTML = displayData.slice(0, 20).map(entry => {
         const date = new Date(entry.timestamp);
         const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        const starIcon = entry.starred ? '⭐' : '☆';
+        const starIcon = entry.starred ? '★' : '☆';
         const starClass = entry.starred ? 'starred' : '';
 
         return `
@@ -1441,10 +1441,10 @@ function updateHistoryTable() {
                 <td style="font-weight: 600; color: var(--primary-color);">NZD $${entry.totalCost.toFixed(2)}</td>
                 <td>
                     <button class="btn-icon" onclick="loadHistoryEntry(${entry.id})" title="Load this quote">
-                        📂 Load
+                        Load
                     </button>
                     <button class="btn-icon btn-delete" onclick="deleteHistoryEntry(${entry.id})" title="Delete">
-                        🗑️
+                        Delete
                     </button>
                 </td>
             </tr>
@@ -1461,7 +1461,7 @@ function updateHistoryStats() {
     const maxCost = costs.length > 0 ? Math.max(...costs) : 0;
     const minCost = costs.length > 0 ? Math.min(...costs) : 0;
 
-    document.getElementById('stat_total_quotes').textContent = `${totalQuotes} (${starredCount} ⭐)`;
+    document.getElementById('stat_total_quotes').textContent = `${totalQuotes} (${starredCount} starred)`;
     document.getElementById('stat_avg_cost').textContent = `NZD $${avgCost.toFixed(2)}`;
     document.getElementById('stat_max_cost').textContent = `NZD $${maxCost.toFixed(2)}`;
     document.getElementById('stat_min_cost').textContent = `NZD $${minCost.toFixed(2)}`;
@@ -2199,17 +2199,21 @@ function toggleCalculatorWidget() {
 
 async function calculateWidget() {
     const material = document.getElementById('widget_material').value;
-    const weight = parseFloat(document.getElementById('widget_weight').value) || 0;
-    const printTime = parseFloat(document.getElementById('widget_time').value) || 0;
+    const weight = parseFloat(document.getElementById('widget_weight').value) || 50;
+    const printTime = parseFloat(document.getElementById('widget_time').value) || 2;
     const quantity = parseInt(document.getElementById('widget_quantity').value) || 1;
 
-    const baseData = collectFormData();
+    // Build minimal widget data without requiring all main form fields
     const widgetData = {
-        ...baseData,
         material_type: material,
         filament_required: weight,
         print_time: printTime,
-        quantity: quantity
+        quantity: quantity,
+        part_name: 'Quick Estimate',
+        labor_time: 30,
+        markup: 70,
+        hardware_items: [],
+        packaging_items: []
     };
 
     try {
@@ -2219,9 +2223,17 @@ async function calculateWidget() {
             body: JSON.stringify(widgetData)
         });
 
-        if (!response.ok) throw new Error('Calculation failed');
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Calculation failed: ${errorText}`);
+        }
 
         const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.error || 'Calculation failed');
+        }
+
         widgetLastResult = result;
 
         const materialCost = result.material_cost * quantity;
@@ -2313,61 +2325,3 @@ function dismissPriceAlert() {
     banner.style.display = 'none';
 }
 
-// ==================== Print Time Estimator ====================
-
-let estimatedPrintTime = null;
-
-function toggleEstimator() {
-    const content = document.getElementById('estimator-content');
-    const btn = document.getElementById('estimator-collapse-btn');
-    const isCollapsed = content.style.display === 'none';
-
-    content.style.display = isCollapsed ? 'block' : 'none';
-    btn.textContent = isCollapsed ? '−' : '+';
-}
-
-function estimatePrintTime() {
-    const volume = parseFloat(document.getElementById('est_volume').value) || 0;
-    const layerHeight = parseFloat(document.getElementById('est_layer_height').value) || 0;
-    const infill = parseFloat(document.getElementById('est_infill').value) || 0;
-    const speed = parseFloat(document.getElementById('est_speed').value) || 0;
-
-    // Check if all required fields are filled
-    if (volume <= 0 || layerHeight <= 0 || speed <= 0) {
-        document.getElementById('estimated_time').textContent = '—';
-        document.getElementById('use-estimate-btn').disabled = true;
-        estimatedPrintTime = null;
-        return;
-    }
-
-    // Simplified print time estimation formula
-    // This is a rough approximation based on common factors
-    const layerCount = (volume / (layerHeight * 10)); // Approximate layer count
-    const infillFactor = 1 + (infill / 100); // Infill increases print time
-    const baseTime = (layerCount * layerHeight * infillFactor) / (speed / 60); // Convert to hours
-
-    // Apply overhead for travel moves, retractions, etc. (typically 20-30%)
-    const estimatedHours = baseTime * 1.25;
-
-    estimatedPrintTime = estimatedHours;
-
-    // Format the result
-    const hours = Math.floor(estimatedHours);
-    const minutes = Math.round((estimatedHours - hours) * 60);
-
-    document.getElementById('estimated_time').textContent =
-        `${hours}h ${minutes}m (${estimatedHours.toFixed(2)} hours)`;
-    document.getElementById('use-estimate-btn').disabled = false;
-}
-
-function useEstimatedTime() {
-    if (estimatedPrintTime === null) return;
-
-    document.getElementById('print_time').value = estimatedPrintTime.toFixed(2);
-    showMessage(`Print time set to ${estimatedPrintTime.toFixed(2)} hours`, 'success');
-
-    // Trigger auto-calculate if enabled
-    if (appSettings.display.autoCalculate) {
-        autoCalculate();
-    }
-}
