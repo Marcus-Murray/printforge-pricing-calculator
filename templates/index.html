@@ -12,36 +12,125 @@
 <body>
     <div class="container">
         <header>
-            <h1>
-                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="PrintForge Logo" class="logo-icon">
-                <span class="brand">PrintForge</span> Pricing Calculator
-            </h1>
-            <div class="header-actions">
-                <button class="theme-toggle" id="themeToggle" title="Toggle theme">
-                    <span id="themeIcon"></span>
-                    <span id="themeText">Dark</span>
+            <div class="header-left">
+                <button class="sidebar-toggle" onclick="toggleSidebar()" title="Toggle navigation">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
                 </button>
-                <button class="settings-toggle" onclick="toggleSettings()" title="Open Settings">
-                    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                <h1>
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="PrintForge Logo" class="logo-icon">
+                    <span class="brand">PrintForge</span> Pricing Calculator
+                </h1>
+            </div>
+        </header>
+
+        <!-- Sidebar Navigation -->
+
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h3>Navigation</h3>
+                <button class="sidebar-close" onclick="toggleSidebar()">×</button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">Calculator</div>
+                <button class="tab-button active" data-tab="calculator">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="2" width="16" height="20" rx="2"/>
+                        <line x1="8" y1="6" x2="16" y2="6"/>
+                        <line x1="8" y1="10" x2="16" y2="10"/>
+                        <line x1="8" y1="14" x2="16" y2="14"/>
+                        <line x1="8" y1="18" x2="12" y2="18"/>
+                    </svg>
+                    <span>Calculator</span>
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">Operations</div>
+                <button class="tab-button" data-tab="batch">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Batch Quote</span>
+                </button>
+                <button class="tab-button" data-tab="compare">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                    <span>Compare</span>
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">Management</div>
+                <button class="tab-button" data-tab="clients">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                    <span>Clients</span>
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">Data</div>
+                <button class="tab-button" data-tab="history">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                    <span>History</span>
+                </button>
+                <button class="sidebar-action-button" onclick="openBackupManager()" title="Manage Backups">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <span>Backups</span>
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">Output</div>
+                <button class="tab-button" data-tab="results">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 11 12 14 22 4"/>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+                    </svg>
+                    <span>Results</span>
+                </button>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="sidebar-section-header">Settings</div>
+                <button class="sidebar-action-button" id="sidebarThemeToggle" title="Toggle theme">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                    <span id="sidebarThemeText">Dark Mode</span>
+                </button>
+                <button class="tab-button" data-tab="settings">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"/>
                         <path d="M12 1v6m0 6v6m6-12l-4 4m-4 4-4 4m16-4h-6m-6 0H1m18-8l-4 4m-4 4-4 4"/>
                     </svg>
                     <span>Settings</span>
                 </button>
             </div>
-        </header>
-
-        <!-- Tab Navigation -->
-        <div class="tabs">
-            <button class="tab-button active" data-tab="basic">Basic Info</button>
-            <button class="tab-button" data-tab="hardware">Hardware</button>
-            <button class="tab-button" data-tab="packaging">Packaging</button>
-            <button class="tab-button" data-tab="advanced">Advanced</button>
-            <button class="tab-button" data-tab="batch">Batch Quote</button>
-            <button class="tab-button" data-tab="compare">Compare</button>
-            <button class="tab-button" data-tab="history">History</button>
-            <button class="tab-button" data-tab="results">Results</button>
         </div>
+
+        <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
 
         <!-- Action Bar -->
         <div class="action-bar">
@@ -79,25 +168,54 @@
                     <button onclick="exportToPDF(); toggleExportMenu();">📄 Export to PDF</button>
                 </div>
             </div>
+            <div class="template-dropdown">
+                <button class="btn btn-secondary" onclick="toggleTemplateMenu()" title="Quote templates">
+                    Templates
+                    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 4px;">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                </button>
+                <div class="template-menu" id="template-menu" style="display: none;">
+                    <button onclick="openTemplateManager()">Manage Templates</button>
+                    <button onclick="openSaveTemplateModal()">Save Current as Template</button>
+                    <div class="menu-divider"></div>
+                    <div id="quick-template-list">
+                        <!-- Populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="createManualBackup()" title="Create backup">Backup</button>
             <div class="spacer"></div>
-            <button class="btn btn-primary" onclick="calculate()" title="Recalculate pricing (Ctrl+R)">
+            <button class="btn btn-primary" onclick="calculateAndShowResults()" title="Calculate pricing (Ctrl+R)">
                 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="23 4 23 10 17 10"/>
                     <polyline points="1 20 1 14 7 14"/>
                     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
                 </svg>
-                Recalculate
+                Calculate
             </button>
         </div>
 
         <!-- Tab Content -->
         <div class="tab-content">
             
-            <!-- Basic Info Tab -->
-            <div id="basic-tab" class="tab-pane active">
+            <!-- Calculator Tab (Combined: Basic Info + Hardware + Packaging + Advanced) -->
+            <div id="calculator-tab" class="tab-pane active">
                 <div class="section">
                     <h2>Product Information</h2>
                     <div class="form-grid">
+                        <div class="form-group">
+                            <label>Client (Optional):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Select a client to track this quote and apply default discount</span>
+                                </span>
+                            </label>
+                            <select id="selected_client" onchange="applyClientDefaults()">
+                                <option value="">-- No Client --</option>
+                                <!-- Populated by JavaScript -->
+                            </select>
+                        </div>
                         <div class="form-group">
                             <label>Part Name:
                                 <span class="tooltip">
@@ -132,101 +250,66 @@
                     <h2>Material & Print Settings</h2>
                     <div class="form-grid">
                         <div class="form-group">
-                            <label>Material Type:
+                            <label>Material Type & Presets:
                                 <span class="tooltip">
                                     <span class="tooltip-icon">?</span>
-                                    <span class="tooltip-text">Type of filament material used for printing (affects cost and properties)</span>
+                                    <span class="tooltip-text">Select a material type or apply a saved preset with pre-configured cost</span>
                                 </span>
                             </label>
-                            <select id="material_type">
-                                <option value="PLA">PLA (Polylactic Acid)</option>
-                                <option value="PLA+">PLA+ (Enhanced PLA)</option>
-                                <option value="ABS">ABS (Acrylonitrile Butadiene Styrene)</option>
-                                <option value="PETG">PETG (Polyethylene Terephthalate Glycol)</option>
-                                <option value="ASA">ASA (Acrylonitrile Styrene Acrylate)</option>
-                                <option value="TPU">TPU (Thermoplastic Polyurethane)</option>
-                                <option value="TPE">TPE (Thermoplastic Elastomer)</option>
-                                <option value="Nylon">Nylon (Polyamide)</option>
-                                <option value="Nylon 6">Nylon 6</option>
-                                <option value="Nylon 12">Nylon 12</option>
-                                <option value="PC">PC (Polycarbonate)</option>
-                                <option value="PC-ABS">PC-ABS Blend</option>
-                                <option value="HIPS">HIPS (High Impact Polystyrene)</option>
-                                <option value="PVA">PVA (Polyvinyl Alcohol - Support)</option>
-                                <option value="BVOH">BVOH (Support Material)</option>
-                                <option value="Carbon Fiber PLA">Carbon Fiber PLA</option>
-                                <option value="Carbon Fiber PETG">Carbon Fiber PETG</option>
-                                <option value="Carbon Fiber Nylon">Carbon Fiber Nylon</option>
-                                <option value="Glass Fiber Nylon">Glass Fiber Nylon</option>
-                                <option value="Wood PLA">Wood PLA</option>
-                                <option value="Metal PLA">Metal PLA</option>
-                                <option value="Marble PLA">Marble PLA</option>
-                                <option value="Silk PLA">Silk PLA</option>
-                                <option value="Glow in the Dark PLA">Glow in the Dark PLA</option>
-                                <option value="PEEK">PEEK (Polyether Ether Ketone)</option>
-                                <option value="PEKK">PEKK (Polyetherketoneketone)</option>
-                                <option value="PEI">PEI (Polyetherimide/ULTEM)</option>
-                                <option value="PPSU">PPSU (Polyphenylsulfone)</option>
-                                <option value="PP">PP (Polypropylene)</option>
-                                <option value="PMMA">PMMA (Acrylic)</option>
-                                <option value="PET">PET (Polyethylene Terephthalate)</option>
-                                <option value="Flexible PLA">Flexible PLA</option>
-                                <option value="TPU 95A">TPU 95A (Shore Hardness)</option>
-                                <option value="TPU 85A">TPU 85A (Shore Hardness)</option>
-                                <option value="PVB">PVB (Polyvinyl Butyral)</option>
-                                <option value="PVDF">PVDF (Polyvinylidene Fluoride)</option>
-                            </select>
-                        </div>
-                        <!-- Simplified Material Cost Presets -->
-                        <div class="material-presets-section">
-                            <div class="preset-header">
-                                <h4>Material Cost Presets</h4>
-                                <button class="btn btn-sm btn-secondary" onclick="togglePresetForm()" id="preset-toggle-btn">
-                                    ➕ Create Custom Preset
-                                </button>
-                            </div>
-
-                            <!-- Create Preset Form (Hidden by default) -->
-                            <div class="preset-form" id="preset-form" style="display: none;">
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label>Preset Name:</label>
-                                        <input type="text" id="new_preset_name" placeholder="e.g., My PLA Setup">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Material Type:</label>
-                                        <input type="text" id="new_preset_material" placeholder="e.g., PLA, PETG, ABS">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Cost (NZD/kg):</label>
-                                        <input type="number" id="new_preset_cost" placeholder="45.00" step="0.01" min="0">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Supplier (optional):</label>
-                                        <input type="text" id="new_preset_supplier" placeholder="e.g., Formtech NZ">
-                                    </div>
-                                </div>
-                                <div class="preset-form-actions">
-                                    <button class="btn btn-primary" onclick="saveCustomPreset()">
-                                        💾 Save Preset
-                                    </button>
-                                    <button class="btn btn-secondary" onclick="togglePresetForm()">
-                                        Cancel
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Select Preset Dropdown -->
-                            <div class="form-group" style="margin-top: 16px;">
-                                <label>Select Saved Preset:</label>
-                                <select id="custom_preset_select" onchange="applyCustomPreset()">
-                                    <option value="">-- Select a Preset --</option>
+                            <div style="display: flex; gap: 8px; align-items: center;">
+                                <select id="material_type" onchange="handleMaterialSelection()" style="flex: 1;">
+                                    <option value="_add_preset">➕ Add Custom Preset</option>
+                                    <optgroup label="─────── Standard Materials ───────">
+                                        <option value="PLA">PLA (Polylactic Acid)</option>
+                                        <option value="PLA+">PLA+ (Enhanced PLA)</option>
+                                        <option value="ABS">ABS (Acrylonitrile Butadiene Styrene)</option>
+                                        <option value="PETG">PETG (Polyethylene Terephthalate Glycol)</option>
+                                        <option value="ASA">ASA (Acrylonitrile Styrene Acrylate)</option>
+                                        <option value="TPU">TPU (Thermoplastic Polyurethane)</option>
+                                        <option value="TPE">TPE (Thermoplastic Elastomer)</option>
+                                        <option value="Nylon">Nylon (Polyamide)</option>
+                                        <option value="Nylon 6">Nylon 6</option>
+                                        <option value="Nylon 12">Nylon 12</option>
+                                        <option value="PC">PC (Polycarbonate)</option>
+                                        <option value="PC-ABS">PC-ABS Blend</option>
+                                        <option value="HIPS">HIPS (High Impact Polystyrene)</option>
+                                        <option value="PVA">PVA (Polyvinyl Alcohol - Support)</option>
+                                        <option value="BVOH">BVOH (Support Material)</option>
+                                        <option value="Carbon Fiber PLA">Carbon Fiber PLA</option>
+                                        <option value="Carbon Fiber PETG">Carbon Fiber PETG</option>
+                                        <option value="Carbon Fiber Nylon">Carbon Fiber Nylon</option>
+                                        <option value="Glass Fiber Nylon">Glass Fiber Nylon</option>
+                                        <option value="Wood PLA">Wood PLA</option>
+                                        <option value="Metal PLA">Metal PLA</option>
+                                        <option value="Marble PLA">Marble PLA</option>
+                                        <option value="Silk PLA">Silk PLA</option>
+                                        <option value="Glow in the Dark PLA">Glow in the Dark PLA</option>
+                                        <option value="PEEK">PEEK (Polyether Ether Ketone)</option>
+                                        <option value="PEKK">PEKK (Polyetherketoneketone)</option>
+                                        <option value="PEI">PEI (Polyetherimide/ULTEM)</option>
+                                        <option value="PPSU">PPSU (Polyphenylsulfone)</option>
+                                        <option value="PP">PP (Polypropylene)</option>
+                                        <option value="PMMA">PMMA (Acrylic)</option>
+                                        <option value="PET">PET (Polyethylene Terephthalate)</option>
+                                        <option value="Flexible PLA">Flexible PLA</option>
+                                        <option value="TPU 95A">TPU 95A (Shore Hardness)</option>
+                                        <option value="TPU 85A">TPU 85A (Shore Hardness)</option>
+                                        <option value="PVB">PVB (Polyvinyl Butyral)</option>
+                                        <option value="PVDF">PVDF (Polyvinylidene Fluoride)</option>
+                                    </optgroup>
+                                    <optgroup label="─────── System Presets ───────" id="system-presets-group">
+                                        <option value="preset-system-pla" data-cost="40.00">PLA Standard - NZD $40.00/kg</option>
+                                        <option value="preset-system-petg" data-cost="55.00">PETG Standard - NZD $55.00/kg</option>
+                                        <option value="preset-system-abs" data-cost="50.00">ABS Standard - NZD $50.00/kg</option>
+                                        <option value="preset-system-tpu" data-cost="75.00">TPU Flexible - NZD $75.00/kg</option>
+                                        <option value="preset-system-nylon" data-cost="80.00">Nylon Engineering - NZD $80.00/kg</option>
+                                    </optgroup>
+                                    <optgroup label="─────── User Presets ───────" id="user-presets-group">
+                                        <!-- User presets populated dynamically -->
+                                    </optgroup>
                                 </select>
-                            </div>
-
-                            <div class="preset-actions" id="preset-actions" style="display: none; margin-top: 8px;">
-                                <button class="btn btn-sm btn-danger" onclick="deleteSelectedPreset()">
-                                    🗑️ Delete Selected
+                                <button class="btn btn-sm btn-secondary" onclick="openPresetManager()" title="Manage Custom Presets" style="white-space: nowrap;">
+                                    🔧 Manage
                                 </button>
                             </div>
                         </div>
@@ -268,11 +351,10 @@
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Hardware Tab -->
-            <div id="hardware-tab" class="tab-pane">
+                <!-- Hardware Section -->
                 <div class="section">
+                    <h2>Hardware Costs</h2>
                     <p class="info-text">Add hardware components like screws, magnets, inserts, etc.</p>
                     
                     <table id="hardware-table" class="data-table">
@@ -292,11 +374,10 @@
 
                     <button class="btn btn-secondary" onclick="addHardwareRow()">Add Item</button>
                 </div>
-            </div>
 
-            <!-- Packaging Tab -->
-            <div id="packaging-tab" class="tab-pane">
+                <!-- Packaging Section -->
                 <div class="section">
+                    <h2>Packaging & Shipping</h2>
                     <p class="info-text">Add packaging materials like boxes, bubble wrap, tape, and shipping costs.</p>
                     
                     <table id="packaging-table" class="data-table">
@@ -329,13 +410,15 @@
                         <input type="number" id="shipping_cost" placeholder="0.00" step="0.01" min="0">
                     </div>
                 </div>
-            </div>
 
-            <!-- Advanced Tab -->
-            <div id="advanced-tab" class="tab-pane">
+                <!-- Advanced Settings Section -->
+                <div class="section">
+                    <h2>Advanced Settings</h2>
+                </div>
+
                 <div class="section">
                     <div class="section-header-with-action">
-                        <h2>Machine Cost Calculation</h2>
+                        <h3>Machine Cost Calculation</h3>
                         <button class="btn btn-secondary" onclick="openProfileManager()" title="Manage print profiles">
                             ⚙️ Manage Profiles
                         </button>
@@ -399,7 +482,7 @@
                 </div>
 
                 <div class="section">
-                    <h2>Electricity Cost Calculation</h2>
+                    <h3>Electricity Cost Calculation</h3>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Average Printer Power Consumption (W):
@@ -432,7 +515,7 @@
                 </div>
 
                 <div class="section">
-                    <h2>Other Factors</h2>
+                    <h3>Other Factors</h3>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Material Efficiency Factor:
@@ -452,6 +535,73 @@
                             </label>
                             <input type="number" id="labor_rate" placeholder="20.00" step="0.01" min="0">
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Inventory Tab -->
+            <div id="inventory-tab" class="tab-pane">
+                <div class="section">
+                    <div class="batch-header">
+                        <h2>Inventory Tracking</h2>
+                        <div class="batch-actions">
+                            <select id="inventory_filter" onchange="updateInventoryTable()">
+                                <option value="all">All Materials</option>
+                                <option value="PLA">PLA Only</option>
+                                <option value="PETG">PETG Only</option>
+                                <option value="ABS">ABS Only</option>
+                                <option value="TPU">TPU Only</option>
+                                <option value="Nylon">Nylon Only</option>
+                                <option value="low">Low Stock Only</option>
+                            </select>
+                            <input type="text" id="inventory_search" placeholder="Search materials..." oninput="updateInventoryTable()">
+                            <button class="btn btn-primary" onclick="openInventoryModal()">Add Material</button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="history-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Materials</div>
+                            <div class="stat-value" id="stat_total_materials">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Low Stock Alerts</div>
+                            <div class="stat-value" id="stat_low_stock">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Inventory Value</div>
+                            <div class="stat-value" id="stat_inventory_value">NZD $0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Most Used</div>
+                            <div class="stat-value" id="stat_most_used">-</div>
+                        </div>
+                    </div>
+
+                    <!-- Inventory Table -->
+                    <table class="data-table" id="inventory-table">
+                        <thead>
+                            <tr>
+                                <th>Material Name</th>
+                                <th>Type</th>
+                                <th>Supplier</th>
+                                <th>Current Stock</th>
+                                <th>Min / Max</th>
+                                <th>Location</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventory-tbody">
+                            <tr>
+                                <td colspan="7" class="empty-state">No materials found. Click "Add Material" to get started.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="batch-actions">
+                        <button class="btn btn-secondary" onclick="exportInventoryToCSV()">Export to CSV</button>
+                        <button class="btn btn-danger" onclick="clearAllInventory()">Clear All</button>
                     </div>
                 </div>
             </div>
@@ -656,7 +806,228 @@
                 </div>
             </div>
 
+            <!-- Clients Tab -->
+            <div id="clients-tab" class="tab-pane">
+                <div class="section">
+                    <div class="batch-header">
+                        <h2>Client Management</h2>
+                        <div class="batch-actions">
+                            <select id="client_filter" onchange="updateClientTable()">
+                                <option value="all">All Clients</option>
+                                <option value="starred">Favorites Only</option>
+                                <option value="active">Active (30 days)</option>
+                            </select>
+                            <input type="text" id="client_search" placeholder="Search clients..." oninput="updateClientTable()">
+                            <button class="btn btn-primary" onclick="openClientModal()">Add Client</button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div class="history-stats">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Clients</div>
+                            <div class="stat-value" id="stat_total_clients">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Active Clients (30d)</div>
+                            <div class="stat-value" id="stat_active_clients">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Total Revenue</div>
+                            <div class="stat-value" id="stat_total_revenue">NZD $0.00</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Average Quote Value</div>
+                            <div class="stat-value" id="stat_avg_quote">NZD $0.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Client Table -->
+                    <table class="data-table" id="clients-table">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Client Name</th>
+                                <th>Contact</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Discount</th>
+                                <th>Total Quotes</th>
+                                <th>Total Spent</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clients-tbody">
+                            <tr>
+                                <td colspan="9" class="empty-state">No clients found. Click "Add Client" to get started.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="batch-actions">
+                        <button class="btn btn-secondary" onclick="exportClientsToCSV()">Export to CSV</button>
+                        <button class="btn btn-danger" onclick="clearAllClients()">Clear All Clients</button>
+                    </div>
+                </div>
+            </div>
+
             <!-- Results Tab -->
+            <div id="settings-tab" class="tab-pane">
+                <div class="tab-header">
+                    <h2>Settings</h2>
+                    <p>Configure application preferences and behavior</p>
+                </div>
+
+                <div class="settings-grid">
+                    <!-- Location & Currency -->
+                    <div class="settings-section">
+                        <h3>Location & Currency</h3>
+                        <div class="form-group">
+                            <label>Location:</label>
+                            <input type="text" id="setting_location" value="Christchurch, NZ">
+                        </div>
+                        <div class="form-group">
+                            <label>Currency:</label>
+                            <select id="setting_currency">
+                                <option value="NZD" selected>NZD (New Zealand Dollar)</option>
+                                <option value="AUD">AUD (Australian Dollar)</option>
+                                <option value="USD">USD (US Dollar)</option>
+                                <option value="EUR">EUR (Euro)</option>
+                                <option value="GBP">GBP (British Pound)</option>
+                                <option value="CAD">CAD (Canadian Dollar)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Display Preferences -->
+                    <div class="settings-section">
+                        <h3>Display Preferences</h3>
+                        <div class="form-group">
+                            <label>Units:</label>
+                            <select id="setting_units">
+                                <option value="metric" selected>Metric (g, mm)</option>
+                                <option value="imperial">Imperial (oz, in)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Decimal Places:</label>
+                            <select id="setting_decimal_places">
+                                <option value="2" selected>2</option>
+                                <option value="3">3</option>
+                                <option value="4">4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="setting_auto_calculate" checked>
+                                Auto-calculate on input change
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Company Information -->
+                    <div class="settings-section">
+                        <h3>Company Information</h3>
+                        <div class="form-group">
+                            <label>Company Name:</label>
+                            <input type="text" id="setting_company_name" placeholder="Your Company Name">
+                        </div>
+                    </div>
+
+                    <!-- Price Alerts -->
+                    <div class="settings-section">
+                        <h3>Price Alerts</h3>
+                        <div class="form-group">
+                            <label>Target Price Threshold ($):
+                                <span class="tooltip">
+                                    <span class="tooltip-icon">?</span>
+                                    <span class="tooltip-text">Get visual warnings when quote total exceeds this amount. Leave blank to disable.</span>
+                                </span>
+                            </label>
+                            <input type="number" id="setting_price_threshold" placeholder="e.g. 100" min="0" step="1">
+                        </div>
+                    </div>
+
+                    <!-- Automatic Backups -->
+                    <div class="settings-section">
+                        <h3>Automatic Backups</h3>
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="backup_enabled">
+                                Enable automatic backups
+                            </label>
+                        </div>
+                        <div id="backup-settings-details" style="display: none;">
+                            <div class="form-group">
+                                <label>Backup Frequency:</label>
+                                <select id="backup_frequency">
+                                    <option value="daily">Daily</option>
+                                    <option value="weekly">Weekly</option>
+                                    <option value="monthly">Monthly</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="backup_auto_download">
+                                    Auto-download backups to Downloads folder
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>Include in Backups:</label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="backup_include_settings" checked>
+                                    App Settings
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="backup_include_clients" checked>
+                                    Clients
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="backup_include_templates" checked>
+                                    Quote Templates
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="backup_include_history" checked>
+                                    Quote History
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="backup_include_profiles" checked>
+                                    Print Profiles
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="backup_include_presets" checked>
+                                    Material Presets
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <p class="backup-status">
+                                    Last backup: <span id="backup_last_time">Never</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-secondary" onclick="openBackupManager()">Manage Backups</button>
+                            <button class="btn btn-primary" onclick="createManualBackup()">Backup Now</button>
+                        </div>
+                    </div>
+
+                    <!-- Reset -->
+                    <div class="settings-section">
+                        <h3>Reset</h3>
+                        <p style="color: var(--text-secondary); margin-bottom: 12px;">
+                            Reset all settings to default values. This will not affect your saved data.
+                        </p>
+                        <button class="btn btn-danger" onclick="resetSettings()" style="width: 100%;">
+                            Reset All Settings
+                        </button>
+                    </div>
+                </div>
+
+                <div class="settings-actions">
+                    <button class="btn btn-primary" onclick="applySettings()">Save Settings</button>
+                </div>
+            </div>
+
             <div id="results-tab" class="tab-pane">
                 <!-- Price Alert Banner -->
                 <div id="price-alert-banner" class="price-alert-banner" style="display: none;">
@@ -704,6 +1075,10 @@
                                 <span class="summary-label">Packaging</span>
                                 <span class="summary-value" id="summary_packaging">NZD $0.00</span>
                             </div>
+                            <div class="summary-item-small" id="summary_discount_item" style="display: none;">
+                                <span class="summary-label">Client Discount</span>
+                                <span class="summary-value" id="summary_discount" style="color: var(--success-color);">-NZD $0.00</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -726,6 +1101,10 @@
                         <div class="result-item">
                             <label>Packaging & Shipping:</label>
                             <span id="result_packaging_cost" class="result-value">$0.00</span>
+                        </div>
+                        <div class="result-item" id="result_discount_item" style="display: none;">
+                            <label>Client Discount:</label>
+                            <span id="result_discount" class="result-value" style="color: var(--success-color);">-$0.00</span>
                         </div>
                     </div>
                 </div>
@@ -784,166 +1163,330 @@
         </div>
     </div>
 
-    <!-- Settings Sidebar -->
-    <div class="settings-overlay" id="settings-overlay" onclick="toggleSettings()"></div>
-    <div class="settings-sidebar" id="settings-sidebar">
-        <div class="settings-header">
-            <h2>⚙️ Settings</h2>
-            <button class="close-btn" onclick="toggleSettings()" title="Close">✕</button>
+    <!-- Floating Action Button for Calculate -->
+    <button class="fab-calculate" onclick="calculateAndShowResults()" title="Calculate & View Results">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"/>
+            <polyline points="1 20 1 14 7 14"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+    </button>
+
+    <!-- Low Stock Alert Banner -->
+    <div id="inventory-alert-banner" class="alert-banner" style="display: none;">
+        <div class="alert-content">
+            <strong>!</strong>
+            <span id="inventory-alert-text">Low stock detected</span>
+            <button class="btn btn-sm" onclick="goToInventoryTab()">View Inventory</button>
         </div>
+        <button class="alert-close" onclick="dismissInventoryAlert()">✕</button>
+    </div>
 
-        <div class="settings-content">
-            <!-- Regional Settings -->
-            <div class="settings-section">
-                <h3>📍 Regional</h3>
-                <div class="form-group">
-                    <label>Location:</label>
-                    <input type="text" id="setting_location" value="Christchurch, NZ">
+    <!-- Client Modal -->
+    <div id="client-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="client-modal-title">Add Client</h2>
+                <button class="close-btn" onclick="closeClientModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Client Name: <span class="required">*</span></label>
+                        <input type="text" id="client_name" placeholder="Company or individual name">
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Person:</label>
+                        <input type="text" id="client_contact" placeholder="Primary contact">
+                    </div>
+                    <div class="form-group">
+                        <label>Email: <span class="required">*</span></label>
+                        <input type="email" id="client_email" placeholder="contact@example.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Phone:</label>
+                        <input type="tel" id="client_phone" placeholder="+64 21 123 4567">
+                    </div>
+                    <div class="form-group">
+                        <label>Address:</label>
+                        <input type="text" id="client_address" placeholder="Street address, city">
+                    </div>
+                    <div class="form-group">
+                        <label>Default Discount (%):</label>
+                        <input type="number" id="client_discount" min="0" max="100" value="0" step="1">
+                    </div>
                 </div>
                 <div class="form-group">
-                    <label>Currency:</label>
-                    <select id="setting_currency">
-                        <option value="NZD" selected>NZD (New Zealand Dollar)</option>
-                        <option value="AUD">AUD (Australian Dollar)</option>
-                        <option value="USD">USD (US Dollar)</option>
-                        <option value="EUR">EUR (Euro)</option>
-                        <option value="GBP">GBP (British Pound)</option>
-                        <option value="CAD">CAD (Canadian Dollar)</option>
-                    </select>
+                    <label>Notes:</label>
+                    <textarea id="client_notes" rows="3" placeholder="Special requirements, preferences, etc."></textarea>
                 </div>
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="setting_show_service_area" checked>
-                        Show service area badge
-                    </label>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveClient()">Save Client</button>
                 </div>
             </div>
-
-            <!-- Display Preferences -->
-            <div class="settings-section">
-                <h3>🎨 Display</h3>
-                <div class="form-group">
-                    <label>Units:</label>
-                    <select id="setting_units">
-                        <option value="metric" selected>Metric (g, mm)</option>
-                        <option value="imperial">Imperial (oz, in)</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Decimal Places:</label>
-                    <select id="setting_decimal_places">
-                        <option value="2" selected>2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="checkbox-label">
-                        <input type="checkbox" id="setting_auto_calculate" checked>
-                        Auto-calculate on input change
-                    </label>
-                </div>
-            </div>
-
-            <!-- Export Settings -->
-            <div class="settings-section">
-                <h3>📤 Export</h3>
-                <div class="form-group">
-                    <label>Company Name:</label>
-                    <input type="text" id="setting_company_name" placeholder="Your Company Name">
-                </div>
-            </div>
-
-            <!-- Price Alerts -->
-            <div class="settings-section">
-                <h3>Price Alerts</h3>
-                <div class="form-group">
-                    <label>Target Price Threshold ($):
-                        <span class="tooltip">
-                            <span class="tooltip-icon">?</span>
-                            <span class="tooltip-text">Get visual warnings when quote total exceeds this amount. Leave blank to disable.</span>
-                        </span>
-                    </label>
-                    <input type="number" id="setting_price_threshold" placeholder="e.g. 100" min="0" step="1">
-                </div>
-            </div>
-
-            <!-- Advanced -->
-            <div class="settings-section">
-                <h3>Advanced</h3>
-                <button class="btn btn-danger" onclick="resetSettings()" style="width: 100%;">
-                    Reset All Settings
-                </button>
-            </div>
-        </div>
-
-        <div class="settings-footer">
-            <button class="btn btn-secondary" onclick="toggleSettings()">Cancel</button>
-            <button class="btn btn-primary" onclick="applySettings()">Save Settings</button>
         </div>
     </div>
 
-    <!-- Quick Calculator Widget -->
-    <button class="calculator-widget-btn" onclick="toggleCalculatorWidget()" title="Quick Calculator">
-        $
-    </button>
-
-    <!-- Calculator Widget Modal -->
-    <div id="calculator-widget-modal" class="modal">
-        <div class="modal-content calculator-widget-content">
+    <!-- Inventory Modal -->
+    <div id="inventory-modal" class="modal" style="display: none;">
+        <div class="modal-content">
             <div class="modal-header">
-                <h2>Quick Calculator</h2>
-                <button class="close-btn" onclick="toggleCalculatorWidget()">&times;</button>
+                <h2 id="inventory-modal-title">Add Material</h2>
+                <button class="close-btn" onclick="closeInventoryModal()">✕</button>
             </div>
             <div class="modal-body">
-                <div class="widget-form">
+                <div class="form-grid">
                     <div class="form-group">
-                        <label>Material:</label>
-                        <select id="widget_material" onchange="calculateWidget()">
+                        <label>Material Name: <span class="required">*</span></label>
+                        <input type="text" id="inv_material_name" placeholder="e.g., PLA - Black">
+                    </div>
+                    <div class="form-group">
+                        <label>Material Type: <span class="required">*</span></label>
+                        <select id="inv_material_type">
                             <option value="PLA">PLA</option>
                             <option value="PETG">PETG</option>
                             <option value="ABS">ABS</option>
                             <option value="TPU">TPU</option>
                             <option value="Nylon">Nylon</option>
-                            <option value="ASA">ASA</option>
+                            <option value="Carbon Fiber">Carbon Fiber</option>
+                            <option value="Other">Other</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Weight (g):</label>
-                        <input type="number" id="widget_weight" value="50" min="1" oninput="calculateWidget()">
+                        <label>Supplier:</label>
+                        <input type="text" id="inv_supplier" placeholder="e.g., Formtech NZ">
                     </div>
                     <div class="form-group">
-                        <label>Print Time (hours):</label>
-                        <input type="number" id="widget_time" value="2" min="0.1" step="0.1" oninput="calculateWidget()">
+                        <label>Cost per kg: <span class="required">*</span></label>
+                        <input type="number" id="inv_cost_per_kg" min="0" step="0.01" placeholder="40.00">
                     </div>
                     <div class="form-group">
-                        <label>Quantity:</label>
-                        <input type="number" id="widget_quantity" value="1" min="1" oninput="calculateWidget()">
+                        <label>Current Stock (g): <span class="required">*</span></label>
+                        <input type="number" id="inv_current_stock" min="0" step="1" placeholder="2500">
+                    </div>
+                    <div class="form-group">
+                        <label>Minimum Stock (g): <span class="required">*</span></label>
+                        <input type="number" id="inv_min_stock" min="0" step="1" placeholder="500">
+                    </div>
+                    <div class="form-group">
+                        <label>Maximum Stock (g):</label>
+                        <input type="number" id="inv_max_stock" min="0" step="1" placeholder="5000">
+                    </div>
+                    <div class="form-group">
+                        <label>Storage Location:</label>
+                        <input type="text" id="inv_location" placeholder="e.g., Shelf A-1">
                     </div>
                 </div>
-
-                <div class="widget-result">
-                    <div class="widget-result-row">
-                        <span>Material Cost:</span>
-                        <span id="widget_material_cost">$0.00</span>
-                    </div>
-                    <div class="widget-result-row">
-                        <span>Print Cost:</span>
-                        <span id="widget_print_cost">$0.00</span>
-                    </div>
-                    <div class="widget-result-row widget-total">
-                        <span>Total:</span>
-                        <span id="widget_total">$0.00</span>
-                    </div>
+                <div class="form-group">
+                    <label>Notes:</label>
+                    <textarea id="inv_notes" rows="2" placeholder="Special notes about this material..."></textarea>
                 </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeInventoryModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveInventoryItem()">Save Material</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="widget-actions">
-                    <button class="btn btn-secondary" onclick="copyWidgetResult()">
-                        Copy Result
+    <!-- Restock Modal -->
+    <div id="restock-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 400px;">
+            <div class="modal-header">
+                <h2>Restock Material</h2>
+                <button class="close-btn" onclick="closeRestockModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p><strong id="restock_material_name">Material Name</strong></p>
+                <p class="text-secondary">Current Stock: <span id="restock_current_stock">0</span>g</p>
+                <div class="form-group">
+                    <label>Add Amount (g): <span class="required">*</span></label>
+                    <input type="number" id="restock_amount" min="0" step="1" placeholder="1000">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeRestockModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="confirmRestock()">Restock</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template Manager Modal -->
+    <div id="template-manager-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <h2>Quote Template Manager</h2>
+                <button class="close-btn" onclick="closeTemplateManager()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-tabs">
+                    <button class="template-tab active" data-category="all" onclick="filterTemplatesByCategory('all')">
+                        All Templates
                     </button>
-                    <button class="btn btn-primary" onclick="useWidgetInMain()">
-                        Use in Main Calculator
+                    <button class="template-tab" data-category="Standard" onclick="filterTemplatesByCategory('Standard')">
+                        Standard
                     </button>
+                    <button class="template-tab" data-category="Premium" onclick="filterTemplatesByCategory('Premium')">
+                        Premium
+                    </button>
+                    <button class="template-tab" data-category="Economy" onclick="filterTemplatesByCategory('Economy')">
+                        Economy
+                    </button>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="template_search" placeholder="Search templates..." oninput="filterTemplates()">
+                </div>
+                <div class="template-grid" id="template-grid">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save as Template Modal -->
+    <div id="save-template-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="save-template-title">Save as Template</h2>
+                <button class="close-btn" onclick="closeSaveTemplateModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Template Name: <span class="required">*</span></label>
+                    <input type="text" id="template_name" placeholder="e.g., Standard PLA Print">
+                </div>
+                <div class="form-group">
+                    <label>Description:</label>
+                    <textarea id="template_description" rows="3" placeholder="Brief description of this template..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Category: <span class="required">*</span></label>
+                    <select id="template_category">
+                        <option value="Standard">Standard</option>
+                        <option value="Premium">Premium</option>
+                        <option value="Economy">Economy</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="template_link_client">
+                        Link to client (saves client-specific template)
+                    </label>
+                </div>
+                <div class="form-group" id="template_client_selector_group" style="display: none;">
+                    <label>Select Client:</label>
+                    <select id="template_client">
+                        <!-- Populated from clients -->
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeSaveTemplateModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveQuoteTemplate()">Save Template</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Material Preset Modal -->
+    <div id="material-preset-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="material-preset-title">Add Material Preset</h2>
+                <button class="close-btn" onclick="closeMaterialPresetModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Preset Name: <span class="required">*</span></label>
+                    <input type="text" id="preset_name" placeholder="e.g., My PLA Setup">
+                </div>
+                <div class="form-group">
+                    <label>Material Type: <span class="required">*</span></label>
+                    <input type="text" id="preset_material" placeholder="e.g., PLA, PETG, ABS">
+                </div>
+                <div class="form-group">
+                    <label>Cost (NZD/kg): <span class="required">*</span></label>
+                    <input type="number" id="preset_cost" placeholder="45.00" step="0.01" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Supplier:</label>
+                    <input type="text" id="preset_supplier" placeholder="e.g., Formtech NZ (optional)">
+                </div>
+                <div class="modal-actions">
+                    <button class="btn btn-secondary" onclick="closeMaterialPresetModal()">Cancel</button>
+                    <button class="btn btn-primary" onclick="saveMaterialPreset()">Save Preset</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Preset Manager Modal -->
+    <div id="preset-manager-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 700px;">
+            <div class="modal-header">
+                <h2>Manage Material Presets</h2>
+                <button class="close-btn" onclick="closePresetManager()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="batch-info">
+                    <p><strong>Tip:</strong> Create custom material presets to quickly apply your common material costs.</p>
+                </div>
+                <table class="data-table" id="preset-manager-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Material</th>
+                            <th>Cost/kg</th>
+                            <th>Supplier</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="preset-manager-tbody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+                <div style="margin-top: 16px;">
+                    <button class="btn btn-primary" onclick="openMaterialPresetModal()">
+                        ➕ Add New Preset
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backup Manager Modal -->
+    <div id="backup-manager-modal" class="modal" style="display: none;">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h2>Backup Manager</h2>
+                <button class="close-btn" onclick="closeBackupManager()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="batch-info">
+                    <p><strong>Tip:</strong> Backups are stored in your browser's localStorage. Export them to JSON files for safekeeping.</p>
+                </div>
+                <table class="data-table" id="backup-history-table">
+                    <thead>
+                        <tr>
+                            <th>Date & Time</th>
+                            <th>Type</th>
+                            <th>Items</th>
+                            <th>Size</th>
+                            <th>Data Included</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="backup-history-tbody">
+                        <!-- Populated by JavaScript -->
+                    </tbody>
+                </table>
+                <div class="batch-actions">
+                    <button class="btn btn-secondary" onclick="createManualBackup()">Create New Backup</button>
+                    <button class="btn btn-danger" onclick="clearBackupHistory()">Clear History</button>
+                </div>
+                <div class="form-group">
+                    <label>Restore from File:</label>
+                    <input type="file" id="backup_restore_input" accept=".json" onchange="restoreFromFile(event)">
                 </div>
             </div>
         </div>

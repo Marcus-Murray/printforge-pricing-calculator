@@ -412,6 +412,73 @@ def export_excel():
             'error': str(e)
         }), 400
 
+@app.route('/save-file-to-path', methods=['POST'])
+def save_file_to_path():
+    """
+    Save file to a custom path (desktop mode only)
+    Expects: { 'filepath': '/path/to/file.json', 'content': '...', 'content_type': 'json|excel' }
+    """
+    try:
+        import base64
+
+        data = request.json
+        filepath = data.get('filepath')
+        content = data.get('content')
+        content_type = data.get('content_type', 'json')
+
+        if not filepath:
+            return jsonify({'success': False, 'error': 'No filepath provided'}), 400
+
+        # Ensure directory exists
+        Path(filepath).parent.mkdir(parents=True, exist_ok=True)
+
+        if content_type == 'json':
+            # Save JSON content
+            with open(filepath, 'w', encoding='utf-8') as f:
+                f.write(content)
+        elif content_type == 'excel':
+            # Content is base64 encoded
+            with open(filepath, 'wb') as f:
+                f.write(base64.b64decode(content))
+
+        return jsonify({
+            'success': True,
+            'message': f'File saved to {filepath}'
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
+@app.route('/read-file-from-path', methods=['POST'])
+def read_file_from_path():
+    """
+    Read file from custom path (desktop mode only)
+    Expects: { 'filepath': '/path/to/file.json' }
+    """
+    try:
+        data = request.json
+        filepath = data.get('filepath')
+
+        if not filepath or not Path(filepath).exists():
+            return jsonify({'success': False, 'error': 'File not found'}), 404
+
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        return jsonify({
+            'success': True,
+            'content': content
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 400
+
 if __name__ == '__main__':
     print("\n" + "="*60)
     print("PrintForge Pricing Calculator")

@@ -1,0 +1,35 @@
+Welcome to PrintForge Pricing Calculator Setup
+===============================================
+
+This wizard will install PrintForge Pricing Calculator on your computer.
+
+PrintForge is a professional pricing calculator for 3D printing businesses,
+featuring:
+
+  - Comprehensive cost calculations
+  - Excel export for professional quotes
+  - Client management system
+  - Quote templates and material presets
+  - Automatic backups
+  - Print profiles and batch quoting
+
+SYSTEM REQUIREMENTS
+-------------------
+  - Windows 10 or later (64-bit)
+  - 200 MB free disk space
+  - 4 GB RAM recommended
+
+WHAT WILL BE INSTALLED
+----------------------
+  - PrintForge application
+  - Desktop shortcut (optional)
+  - Start menu entry
+
+YOUR DATA
+---------
+All your data (clients, quotes, settings) will be stored in:
+  C:\Users\<YourName>\AppData\Roaming\PrintForge
+
+This data is preserved when you uninstall or update the application.
+
+Click Next to continue, or Cancel to exit Setup.

@@ -1,17 +1,42 @@
 // PrintForge Pricing Calculator - Frontend JavaScript
+// Updated: 2026-01-09 16:00
+
+// Global Variables
+let clients = [];
+let editingClientId = null;
+let quoteTemplates = [];
+let editingTemplateId = null;
+
+// Desktop Mode Detection
+function isDesktopMode() {
+    return window.pywebview !== undefined;
+}
 
 // Tab Switching
 document.querySelectorAll('.tab-button').forEach(button => {
     button.addEventListener('click', () => {
         const tabName = button.getAttribute('data-tab');
-        
+
         // Remove active class from all tabs and buttons
         document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
         document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
-        
+
         // Add active class to clicked button and corresponding pane
         button.classList.add('active');
         document.getElementById(`${tabName}-tab`).classList.add('active');
+
+        // Populate settings UI when settings tab is opened
+        if (tabName === 'settings') {
+            populateSettingsUI();
+        }
+
+        // Close sidebar on mobile/when sidebar is open
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('sidebar-overlay');
+        if (sidebar && sidebar.classList.contains('active')) {
+            sidebar.classList.remove('active');
+            overlay.classList.remove('active');
+        }
     });
 });
 
@@ -207,16 +232,44 @@ async function calculate() {
         });
         
         const result = await response.json();
-        
+
         if (result.success) {
+            // Apply client discount if client selected
+            const clientId = document.getElementById('selected_client')?.value;
+            let discount = 0;
+            let discountAmount = 0;
+            if (clientId) {
+                const client = clients.find(c => c.id === clientId);
+                if (client && client.defaultDiscount) {
+                    discount = client.defaultDiscount;
+                    discountAmount = result.total_cost * (discount / 100);
+                    result.total_cost = result.total_cost - discountAmount;
+                    result.price_50 = result.price_50 - (result.price_50 * (discount / 100));
+                    result.price_60 = result.price_60 - (result.price_60 * (discount / 100));
+                    result.price_70 = result.price_70 - (result.price_70 * (discount / 100));
+                    result.price_custom = result.price_custom - (result.price_custom * (discount / 100));
+                }
+            }
+
             // Update results
             document.getElementById('result_material_cost').textContent = `$${result.material_cost.toFixed(2)}`;
             document.getElementById('result_labor_cost').textContent = `$${result.labor_cost.toFixed(2)}`;
-            document.getElementById('result_machine_cost').textContent = 
+            document.getElementById('result_machine_cost').textContent =
                 `$${result.machine_cost_total.toFixed(2)} (Depreciation: $${result.machine_depreciation.toFixed(2)} + Electricity: $${result.electricity_cost.toFixed(2)})`;
             document.getElementById('result_packaging_cost').textContent = `$${result.packaging_cost.toFixed(2)}`;
-            document.getElementById('result_total_cost').textContent = `$${result.total_cost.toFixed(2)}`;
-            
+
+            // Show discount if applied
+            let totalCostText = `$${result.total_cost.toFixed(2)}`;
+            if (discount > 0) {
+                totalCostText += ` <span style="color: var(--success-color); font-size: 0.875rem;">(${discount}% discount applied: -$${discountAmount.toFixed(2)})</span>`;
+                // Show discount in cost breakdown
+                document.getElementById('result_discount_item').style.display = 'block';
+                document.getElementById('result_discount').textContent = `-$${discountAmount.toFixed(2)} (${discount}%)`;
+            } else {
+                document.getElementById('result_discount_item').style.display = 'none';
+            }
+            document.getElementById('result_total_cost').innerHTML = totalCostText;
+
             document.getElementById('result_price_50').textContent = `$${result.price_50.toFixed(2)}`;
             document.getElementById('result_price_60').textContent = `$${result.price_60.toFixed(2)}`;
             document.getElementById('result_price_70').textContent = `$${result.price_70.toFixed(2)}`;
@@ -225,7 +278,7 @@ async function calculate() {
             document.getElementById('cost_per_hour').value = `$${result.cost_per_hour.toFixed(4)} /hour`;
 
             // Update Quick Summary Card
-            updateQuickSummary(result);
+            updateQuickSummary(result, discount, discountAmount);
 
             // Check price alert
             checkPriceAlert(result);
@@ -243,6 +296,9 @@ async function calculate() {
                 packagingCost: result.packaging_cost,
                 notes: data.quote_notes
             });
+
+            // Update client stats if client selected
+            updateClientQuoteStats(result.total_cost);
 
             showMessage('Calculation complete!', 'success');
         } else {
@@ -278,31 +334,64 @@ document.addEventListener('DOMContentLoaded', () => {
 async function saveConfig() {
     try {
         const config = collectFormData();
-        const filename = `${config.part_name.replace(/ /g, '_')}_Config.json`;
-        
-        const response = await fetch('/save-config', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ filename, config })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            // Trigger download
-            const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showMessage('Configuration saved!', 'success');
+        const defaultFilename = `${config.part_name.replace(/ /g, '_')}_config.json`;
+
+        // Desktop mode: use native file dialog
+        if (isDesktopMode()) {
+            const filepath = await window.pywebview.api.save_file_dialog(
+                defaultFilename,
+                'JSON Files (*.json)'
+            );
+
+            if (!filepath) {
+                // User cancelled
+                return;
+            }
+
+            const response = await fetch('/save-file-to-path', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    filepath: filepath,
+                    content: JSON.stringify(config, null, 2),
+                    content_type: 'json'
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                showMessage('Configuration saved!', 'success');
+            } else {
+                showMessage('Save failed: ' + result.error, 'error');
+            }
         } else {
-            showMessage('Save failed: ' + result.error, 'error');
+            // Web mode: use browser download
+            const response = await fetch('/save-config', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ filename: defaultFilename, config })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Trigger download
+                const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = defaultFilename;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showMessage('Configuration saved!', 'success');
+            } else {
+                showMessage('Save failed: ' + result.error, 'error');
+            }
         }
     } catch (error) {
         showMessage('Error: ' + error.message, 'error');
@@ -400,7 +489,7 @@ async function loadConfig(event) {
 async function exportToExcel() {
     try {
         const data = collectFormData();
-        
+
         // Add results to data
         const results = {
             material_cost: parseFloat(document.getElementById('result_material_cost').textContent.replace('$', '')) || 0,
@@ -414,30 +503,89 @@ async function exportToExcel() {
             price_custom: parseFloat(document.getElementById('result_price_custom').textContent.replace('$', '')) || 0,
             custom_margin: parseFloat(document.getElementById('custom_margin').value) || 75
         };
-        
+
         data.results = results;
-        
-        const response = await fetch('/export-excel', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        if (response.ok) {
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${data.part_name.replace(/ /g, '_')}_Pricing.xlsx`;
-            a.click();
-            URL.revokeObjectURL(url);
-            
-            showMessage('Excel file exported!', 'success');
+
+        const defaultFilename = `${data.part_name.replace(/ /g, '_')}_Pricing.xlsx`;
+
+        // Desktop mode: use native file dialog
+        if (isDesktopMode()) {
+            const filepath = await window.pywebview.api.save_file_dialog(
+                defaultFilename,
+                'Excel Files (*.xlsx)'
+            );
+
+            if (!filepath) {
+                // User cancelled
+                return;
+            }
+
+            const response = await fetch('/export-excel', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const arrayBuffer = await blob.arrayBuffer();
+                const bytes = new Uint8Array(arrayBuffer);
+
+                // Convert to base64 for transmission
+                let binary = '';
+                for (let i = 0; i < bytes.length; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                const base64 = btoa(binary);
+
+                const saveResponse = await fetch('/save-file-to-path', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        filepath: filepath,
+                        content: base64,
+                        content_type: 'excel'
+                    })
+                });
+
+                const result = await saveResponse.json();
+                if (result.success) {
+                    showMessage('Excel file exported!', 'success');
+                } else {
+                    showMessage('Export failed: ' + result.error, 'error');
+                }
+            } else {
+                const result = await response.json();
+                showMessage('Export failed: ' + result.error, 'error');
+            }
         } else {
-            const result = await response.json();
-            showMessage('Export failed: ' + result.error, 'error');
+            // Web mode: use browser download
+            const response = await fetch('/export-excel', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = defaultFilename;
+                a.click();
+                URL.revokeObjectURL(url);
+
+                showMessage('Excel file exported!', 'success');
+            } else {
+                const result = await response.json();
+                showMessage('Export failed: ' + result.error, 'error');
+            }
         }
     } catch (error) {
         showMessage('Error: ' + error.message, 'error');
@@ -458,9 +606,6 @@ function showMessage(text, type) {
 }
 
 // Theme Toggle
-const themeToggle = document.getElementById('themeToggle');
-const themeIcon = document.getElementById('themeIcon');
-const themeText = document.getElementById('themeText');
 const htmlElement = document.documentElement;
 
 // SVG Icons
@@ -486,23 +631,7 @@ function getInitialTheme() {
 function setTheme(theme) {
     htmlElement.setAttribute('data-theme', theme);
     localStorage.setItem('theme', theme);
-
-    // Update icon and text
-    if (theme === 'light') {
-        themeIcon.innerHTML = sunIcon;
-        themeText.textContent = 'Light';
-    } else {
-        themeIcon.innerHTML = moonIcon;
-        themeText.textContent = 'Dark';
-    }
 }
-
-// Toggle theme
-themeToggle.addEventListener('click', () => {
-    const currentTheme = htmlElement.getAttribute('data-theme') || 'dark';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-});
 
 // Listen for system theme changes
 if (window.matchMedia) {
@@ -513,6 +642,18 @@ if (window.matchMedia) {
     });
 }
 
+// Calculate and navigate to Results tab
+function calculateAndShowResults() {
+    calculate();
+    // Navigate to Results tab
+    setTimeout(() => {
+        document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+        document.querySelector('.tab-button[data-tab="results"]').classList.add('active');
+        document.getElementById('results-tab').classList.add('active');
+    }, 100);
+}
+
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     setTheme(getInitialTheme());
@@ -520,17 +661,49 @@ document.addEventListener('DOMContentLoaded', () => {
     loadCustomPresets(); // Load custom material presets
     loadPrintProfiles(); // Load print profiles
     loadHistory(); // Load quote history
+    loadClients(); // Load client management
+    loadTemplates(); // Load quote templates
     addBatchRow(); // Initialize batch with one row
+
+    // Setup sidebar theme toggle
+    const sidebarThemeToggle = document.getElementById('sidebarThemeToggle');
+    if (sidebarThemeToggle) {
+        sidebarThemeToggle.addEventListener('click', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+            updateSidebarThemeButton(newTheme);
+        });
+    }
+
+    // Update sidebar theme button on load
+    updateSidebarThemeButton(getInitialTheme());
 });
 
+// Update sidebar theme button text
+function updateSidebarThemeButton(theme) {
+    const sidebarThemeText = document.getElementById('sidebarThemeText');
+    if (sidebarThemeText) {
+        sidebarThemeText.textContent = theme === 'dark' ? 'Light Mode' : 'Dark Mode';
+    }
+}
+
 // Quick Summary Card Functions
-function updateQuickSummary(result) {
+function updateQuickSummary(result, discount = 0, discountAmount = 0) {
     document.getElementById('summary_total_cost').textContent = `NZD $${result.total_cost.toFixed(2)}`;
     document.getElementById('summary_recommended_price').textContent = `NZD $${result.price_70.toFixed(2)}`;
     document.getElementById('summary_materials').textContent = `NZD $${result.material_cost.toFixed(2)}`;
     document.getElementById('summary_labor').textContent = `NZD $${result.labor_cost.toFixed(2)}`;
     document.getElementById('summary_machine').textContent = `NZD $${result.machine_cost_total.toFixed(2)}`;
     document.getElementById('summary_packaging').textContent = `NZD $${result.packaging_cost.toFixed(2)}`;
+
+    // Show/hide discount
+    if (discount > 0) {
+        document.getElementById('summary_discount_item').style.display = 'block';
+        document.getElementById('summary_discount').textContent = `-NZD $${discountAmount.toFixed(2)} (${discount}%)`;
+    } else {
+        document.getElementById('summary_discount_item').style.display = 'none';
+    }
 }
 
 function toggleSummary() {
@@ -553,8 +726,7 @@ function toggleSummary() {
 const defaultSettings = {
     regional: {
         location: 'Christchurch, NZ',
-        currency: 'NZD',
-        showServiceArea: true
+        currency: 'NZD'
     },
     display: {
         units: 'metric', // 'metric' or 'imperial'
@@ -606,27 +778,25 @@ function resetSettings() {
     }
 }
 
-// Toggle settings sidebar
-function toggleSettings() {
-    const sidebar = document.getElementById('settings-sidebar');
-    const overlay = document.getElementById('settings-overlay');
+// Toggle navigation sidebar
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
 
-    if (sidebar.classList.contains('open')) {
-        sidebar.classList.remove('open');
-        overlay.classList.remove('visible');
+    if (sidebar.classList.contains('active')) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
     } else {
-        sidebar.classList.add('open');
-        overlay.classList.add('visible');
-        populateSettingsUI();
+        sidebar.classList.add('active');
+        overlay.classList.add('active');
     }
 }
 
-// Populate settings UI with current values
+// Populate settings UI with current values (called when Settings tab is opened)
 function populateSettingsUI() {
     // Regional
     document.getElementById('setting_location').value = appSettings.regional.location;
     document.getElementById('setting_currency').value = appSettings.regional.currency;
-    document.getElementById('setting_show_service_area').checked = appSettings.regional.showServiceArea;
 
     // Display
     document.getElementById('setting_units').value = appSettings.display.units;
@@ -645,7 +815,6 @@ function applySettings() {
     // Regional
     appSettings.regional.location = document.getElementById('setting_location').value;
     appSettings.regional.currency = document.getElementById('setting_currency').value;
-    appSettings.regional.showServiceArea = document.getElementById('setting_show_service_area').checked;
 
     // Display
     appSettings.display.units = document.getElementById('setting_units').value;
@@ -660,14 +829,24 @@ function applySettings() {
     appSettings.priceThreshold = threshold ? parseFloat(threshold) : null;
 
     saveSettings();
-    toggleSettings();
+    showMessage('Settings saved successfully!', 'success');
 }
 
 // ============================================================================
-// SIMPLIFIED MATERIAL PRESET SYSTEM
+// MATERIAL PRESETS
 // ============================================================================
 
 let customMaterialPresets = [];
+let editingPresetId = null;
+
+// System presets mapping
+const systemPresets = {
+    'preset-system-pla': { material: 'PLA', cost: 40.00 },
+    'preset-system-petg': { material: 'PETG', cost: 55.00 },
+    'preset-system-abs': { material: 'ABS', cost: 50.00 },
+    'preset-system-tpu': { material: 'TPU', cost: 75.00 },
+    'preset-system-nylon': { material: 'Nylon', cost: 80.00 }
+};
 
 // Load custom presets from localStorage
 function loadCustomPresets() {
@@ -680,7 +859,7 @@ function loadCustomPresets() {
             customMaterialPresets = [];
         }
     }
-    populateCustomPresets();
+    populateUserPresetsInDropdown();
 }
 
 // Save custom presets to localStorage
@@ -688,103 +867,199 @@ function saveCustomPresets() {
     localStorage.setItem('printforge_material_presets', JSON.stringify(customMaterialPresets));
 }
 
-// Toggle preset creation form
-function togglePresetForm() {
-    const form = document.getElementById('preset-form');
-    const btn = document.getElementById('preset-toggle-btn');
+// Handle material type selection
+function handleMaterialSelection() {
+    const select = document.getElementById('material_type');
+    const value = select.value;
 
-    if (form.style.display === 'none') {
-        form.style.display = 'block';
-        btn.textContent = '✖ Cancel';
-    } else {
-        form.style.display = 'none';
-        btn.textContent = '➕ Create Custom Preset';
-        // Clear form
-        document.getElementById('new_preset_name').value = '';
-        document.getElementById('new_preset_material').value = '';
-        document.getElementById('new_preset_cost').value = '';
-        document.getElementById('new_preset_supplier').value = '';
+    if (value === '_add_preset') {
+        // Open modal to create custom preset
+        openMaterialPresetModal();
+        // Reset to previous value (PLA default)
+        select.value = 'PLA';
+        return;
     }
+
+    // Check if it's a system preset
+    if (value.startsWith('preset-system-')) {
+        const preset = systemPresets[value];
+        if (preset) {
+            document.getElementById('filament_cost').value = preset.cost.toFixed(2);
+            showMessage(`Applied ${preset.material} preset - NZD $${preset.cost.toFixed(2)}/kg`, 'success');
+            autoCalculate();
+        }
+        return;
+    }
+
+    // Check if it's a user preset
+    if (value.startsWith('preset-user-')) {
+        const presetId = value.replace('preset-user-', '');
+        const preset = customMaterialPresets.find(p => p.id === presetId);
+        if (preset) {
+            document.getElementById('filament_cost').value = preset.cost.toFixed(2);
+            showMessage(`Applied "${preset.name}" - NZD $${preset.cost.toFixed(2)}/kg`, 'success');
+            autoCalculate();
+        }
+        return;
+    }
+
+    // Regular material selection - do nothing special
 }
 
-// Save a new custom preset
-function saveCustomPreset() {
-    const name = document.getElementById('new_preset_name').value.trim();
-    const material = document.getElementById('new_preset_material').value.trim();
-    const cost = parseFloat(document.getElementById('new_preset_cost').value);
-    const supplier = document.getElementById('new_preset_supplier').value.trim() || 'Custom';
+// Populate user presets in the material type dropdown
+function populateUserPresetsInDropdown() {
+    const userGroup = document.getElementById('user-presets-group');
+
+    // Clear existing user presets
+    userGroup.innerHTML = '<!-- User presets populated dynamically -->';
+
+    if (customMaterialPresets.length === 0) {
+        const option = document.createElement('option');
+        option.disabled = true;
+        option.textContent = 'No custom presets yet';
+        userGroup.appendChild(option);
+        return;
+    }
+
+    customMaterialPresets.forEach(preset => {
+        const option = document.createElement('option');
+        option.value = `preset-user-${preset.id}`;
+        option.setAttribute('data-cost', preset.cost);
+        option.textContent = `${preset.name} - ${preset.material} @ NZD $${preset.cost.toFixed(2)}/kg`;
+
+        // Add delete icon in the text (user can right-click to manage)
+        option.title = `${preset.supplier || 'Custom'} - Right-click in form to manage`;
+
+        userGroup.appendChild(option);
+    });
+}
+
+// Open material preset modal
+function openMaterialPresetModal(presetId = null) {
+    editingPresetId = presetId;
+
+    if (presetId) {
+        const preset = customMaterialPresets.find(p => p.id === presetId);
+        if (preset) {
+            document.getElementById('material-preset-title').textContent = 'Edit Material Preset';
+            document.getElementById('preset_name').value = preset.name;
+            document.getElementById('preset_material').value = preset.material;
+            document.getElementById('preset_cost').value = preset.cost;
+            document.getElementById('preset_supplier').value = preset.supplier || '';
+        }
+    } else {
+        document.getElementById('material-preset-title').textContent = 'Add Material Preset';
+        document.getElementById('preset_name').value = '';
+        document.getElementById('preset_material').value = '';
+        document.getElementById('preset_cost').value = '';
+        document.getElementById('preset_supplier').value = '';
+    }
+
+    // Close preset manager if open
+    closePresetManager();
+
+    document.getElementById('material-preset-modal').style.display = 'flex';
+}
+
+// Close material preset modal
+function closeMaterialPresetModal() {
+    document.getElementById('material-preset-modal').style.display = 'none';
+    editingPresetId = null;
+}
+
+// Save material preset
+function saveMaterialPreset() {
+    const name = document.getElementById('preset_name').value.trim();
+    const material = document.getElementById('preset_material').value.trim();
+    const cost = parseFloat(document.getElementById('preset_cost').value);
+    const supplier = document.getElementById('preset_supplier').value.trim() || 'Custom';
 
     if (!name || !material || !cost || cost <= 0) {
         showMessage('Please fill in all required fields with valid values', 'error');
         return;
     }
 
-    const preset = {
-        id: `preset-${Date.now()}`,
-        name,
-        material,
-        cost,
-        supplier
-    };
+    if (editingPresetId) {
+        // Edit existing preset
+        const preset = customMaterialPresets.find(p => p.id === editingPresetId);
+        if (preset) {
+            preset.name = name;
+            preset.material = material;
+            preset.cost = cost;
+            preset.supplier = supplier;
+            showMessage(`Preset "${name}" updated successfully`, 'success');
+        }
+    } else {
+        // Create new preset
+        const preset = {
+            id: `${Date.now()}`,
+            name,
+            material,
+            cost,
+            supplier
+        };
+        customMaterialPresets.push(preset);
+        showMessage(`Preset "${name}" saved successfully`, 'success');
+    }
 
-    customMaterialPresets.push(preset);
     saveCustomPresets();
-    populateCustomPresets();
-    togglePresetForm();
-    showMessage(`Preset "${name}" saved successfully`, 'success');
-}
+    populateUserPresetsInDropdown();
+    updatePresetManagerTable();
+    closeMaterialPresetModal();
 
-// Populate custom preset dropdown
-function populateCustomPresets() {
-    const select = document.getElementById('custom_preset_select');
-    select.innerHTML = '<option value="">-- Select a Preset --</option>';
-
-    customMaterialPresets.forEach(preset => {
-        const option = document.createElement('option');
-        option.value = preset.id;
-        option.textContent = `${preset.name} - ${preset.material} @ NZD $${preset.cost.toFixed(2)}/kg (${preset.supplier})`;
-        select.appendChild(option);
-    });
-
-    // Show/hide delete button based on selection
-    const actions = document.getElementById('preset-actions');
-    actions.style.display = customMaterialPresets.length > 0 ? 'block' : 'none';
-}
-
-// Apply selected custom preset
-function applyCustomPreset() {
-    const select = document.getElementById('custom_preset_select');
-    const presetId = select.value;
-
-    if (!presetId) return;
-
-    const preset = customMaterialPresets.find(p => p.id === presetId);
-
-    if (preset) {
-        document.getElementById('filament_cost').value = preset.cost.toFixed(2);
-        showMessage(`Applied preset: ${preset.name} - NZD $${preset.cost.toFixed(2)}/kg`, 'success');
-        autoCalculate();
+    // Re-open preset manager if we were editing from there
+    if (editingPresetId) {
+        setTimeout(() => openPresetManager(), 100);
     }
 }
 
-// Delete selected preset
-function deleteSelectedPreset() {
-    const select = document.getElementById('custom_preset_select');
-    const presetId = select.value;
-
-    if (!presetId) {
-        showMessage('Please select a preset to delete', 'error');
-        return;
-    }
-
+// Delete material preset (called from context menu or management interface)
+function deleteMaterialPreset(presetId) {
     const preset = customMaterialPresets.find(p => p.id === presetId);
 
     if (preset && confirm(`Delete preset "${preset.name}"?`)) {
         customMaterialPresets = customMaterialPresets.filter(p => p.id !== presetId);
         saveCustomPresets();
-        populateCustomPresets();
+        populateUserPresetsInDropdown();
+        updatePresetManagerTable();
         showMessage(`Preset "${preset.name}" deleted`, 'info');
     }
+}
+
+// Open preset manager modal
+function openPresetManager() {
+    updatePresetManagerTable();
+    document.getElementById('preset-manager-modal').style.display = 'flex';
+}
+
+// Close preset manager modal
+function closePresetManager() {
+    document.getElementById('preset-manager-modal').style.display = 'none';
+}
+
+// Update preset manager table
+function updatePresetManagerTable() {
+    const tbody = document.getElementById('preset-manager-tbody');
+
+    if (!tbody) return;
+
+    if (customMaterialPresets.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" class="empty-state">No custom presets yet. Click "Add New Preset" to create one.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = customMaterialPresets.map(preset => `
+        <tr>
+            <td><strong>${preset.name}</strong></td>
+            <td>${preset.material}</td>
+            <td>NZD $${preset.cost.toFixed(2)}/kg</td>
+            <td>${preset.supplier || 'Custom'}</td>
+            <td>
+                <button class="btn btn-sm" onclick="openMaterialPresetModal('${preset.id}')">Edit</button>
+                <button class="btn btn-sm btn-danger" onclick="deleteMaterialPreset('${preset.id}')">Delete</button>
+            </td>
+        </tr>
+    `).join('');
 }
 
 // ============================================================================
@@ -2187,128 +2462,6 @@ function clearComparison() {
 
 let widgetLastResult = null;
 
-function toggleCalculatorWidget() {
-    const modal = document.getElementById('calculator-widget-modal');
-    const isVisible = modal.style.display === 'block';
-    modal.style.display = isVisible ? 'none' : 'block';
-
-    if (!isVisible) {
-        calculateWidget();
-    }
-}
-
-async function calculateWidget() {
-    const material = document.getElementById('widget_material').value;
-    const weight = parseFloat(document.getElementById('widget_weight').value) || 50;
-    const printTime = parseFloat(document.getElementById('widget_time').value) || 2;
-    const quantity = parseInt(document.getElementById('widget_quantity').value) || 1;
-
-    // Build complete widget data with all required defaults
-    const widgetData = {
-        material_type: material,
-        filament_required: weight,
-        print_time: printTime,
-        quantity: quantity,
-        part_name: 'Quick Estimate',
-        labor_time: 30,
-        markup: 70,
-        hardware_items: [],
-        packaging_items: [],
-        // Required backend fields with defaults
-        filament_cost: 40.0,
-        shipping_cost: 0.0,
-        printer_cost: 1000.0,
-        upfront_cost: 0.0,
-        annual_maintenance: 75.0,
-        printer_life: 3.0,
-        average_uptime: 50.0,
-        power_consumption: 250.0,
-        electricity_rate: 0.30,
-        electricity_daily: 1.50,
-        efficiency_factor: 1.1,
-        labor_rate: 20.0
-    };
-
-    try {
-        const response = await fetch('/calculate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(widgetData)
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Calculation failed: ${errorText}`);
-        }
-
-        const result = await response.json();
-
-        if (!result.success) {
-            throw new Error(result.error || 'Calculation failed');
-        }
-
-        widgetLastResult = result;
-
-        const materialCost = result.material_cost || 0;
-        const laborCost = result.labor_cost || 0;
-        const machineCost = result.machine_cost_total || 0;
-        const packagingCost = result.packaging_cost || 0;
-
-        const printCost = laborCost + machineCost;
-        const totalPerUnit = materialCost + printCost + packagingCost;
-        const total = totalPerUnit * quantity;
-
-        document.getElementById('widget_material_cost').textContent = `$${(materialCost * quantity).toFixed(2)}`;
-        document.getElementById('widget_print_cost').textContent = `$${(printCost * quantity).toFixed(2)}`;
-        document.getElementById('widget_total').textContent = `$${total.toFixed(2)}`;
-
-    } catch (error) {
-        console.error('Widget calculation error:', error);
-        document.getElementById('widget_material_cost').textContent = '$0.00';
-        document.getElementById('widget_print_cost').textContent = '$0.00';
-        document.getElementById('widget_total').textContent = '$0.00';
-    }
-}
-
-function copyWidgetResult() {
-    const material = document.getElementById('widget_material').value;
-    const weight = parseFloat(document.getElementById('widget_weight').value) || 0;
-    const printTime = parseFloat(document.getElementById('widget_time').value) || 0;
-    const quantity = parseInt(document.getElementById('widget_quantity').value) || 1;
-    const total = document.getElementById('widget_total').textContent;
-
-    const text = `Quick Quote:
-Material: ${material}
-Weight: ${weight}g
-Print Time: ${printTime}h
-Quantity: ${quantity}
-Total: ${total}`;
-
-    navigator.clipboard.writeText(text).then(() => {
-        showMessage('Copied to clipboard!', 'success');
-    }).catch(() => {
-        showMessage('Failed to copy', 'error');
-    });
-}
-
-function useWidgetInMain() {
-    const material = document.getElementById('widget_material').value;
-    const weight = parseFloat(document.getElementById('widget_weight').value) || 0;
-    const printTime = parseFloat(document.getElementById('widget_time').value) || 0;
-    const quantity = parseInt(document.getElementById('widget_quantity').value) || 1;
-
-    document.getElementById('material_type').value = material;
-    document.getElementById('filament_required').value = weight;
-    document.getElementById('print_time').value = printTime;
-    document.getElementById('quantity').value = quantity;
-
-    toggleCalculatorWidget();
-    switchTab('calculator');
-    calculate();
-
-    showMessage('Values copied to main calculator', 'success');
-}
-
 // ==================== Price Alerts ====================
 
 function checkPriceAlert(result) {
@@ -2342,4 +2495,1283 @@ function dismissPriceAlert() {
     const banner = document.getElementById('price-alert-banner');
     banner.style.display = 'none';
 }
+
+// ================================
+// CLIENT MANAGEMENT
+// ================================
+
+function loadClients() {
+    const saved = localStorage.getItem('printforge_clients');
+    if (saved) {
+        try {
+            clients = JSON.parse(saved);
+        } catch (e) {
+            console.error('Failed to load clients:', e);
+            clients = [];
+        }
+    }
+    updateClientDisplay();
+    populateClientSelector();
+}
+
+function saveClients() {
+    localStorage.setItem('printforge_clients', JSON.stringify(clients));
+}
+
+function updateClientDisplay() {
+    updateClientTable();
+    updateClientStats();
+    populateClientSelector();
+}
+
+function updateClientTable() {
+    const filter = document.getElementById('client_filter')?.value || 'all';
+    const search = document.getElementById('client_search')?.value.toLowerCase() || '';
+    const tbody = document.getElementById('clients-tbody');
+
+    if (!tbody) return;
+
+    let displayData = clients;
+
+    if (filter === 'starred') {
+        displayData = displayData.filter(c => c.starred);
+    } else if (filter === 'active') {
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        displayData = displayData.filter(c => c.lastQuoteDate && new Date(c.lastQuoteDate) >= thirtyDaysAgo);
+    }
+
+    if (search) {
+        displayData = displayData.filter(c =>
+            c.name.toLowerCase().includes(search) ||
+            c.email.toLowerCase().includes(search) ||
+            (c.contactName && c.contactName.toLowerCase().includes(search))
+        );
+    }
+
+    if (displayData.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No clients found. Click "Add Client" to get started.</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = displayData.map(client => {
+        const starIcon = client.starred ? '★' : '☆';
+        const starClass = client.starred ? 'starred' : '';
+
+        return `
+            <tr>
+                <td>
+                    <button class="star-btn ${starClass}" onclick="toggleStarClient('${client.id}')">
+                        ${starIcon}
+                    </button>
+                </td>
+                <td><strong>${client.name}</strong></td>
+                <td>${client.contactName || '-'}</td>
+                <td>${client.email}</td>
+                <td>${client.phone || '-'}</td>
+                <td>${client.defaultDiscount || 0}%</td>
+                <td>${client.totalQuotes || 0}</td>
+                <td>NZD $${(client.totalSpent || 0).toFixed(2)}</td>
+                <td>
+                    <button class="btn btn-sm" onclick="editClient('${client.id}')">Edit</button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteClient('${client.id}')">Delete</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function updateClientStats() {
+    const totalClients = clients.length;
+
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const activeClients = clients.filter(c => c.lastQuoteDate && new Date(c.lastQuoteDate) >= thirtyDaysAgo).length;
+
+    const totalRevenue = clients.reduce((sum, c) => sum + (c.totalSpent || 0), 0);
+    const totalQuotes = clients.reduce((sum, c) => sum + (c.totalQuotes || 0), 0);
+    const avgQuote = totalQuotes > 0 ? totalRevenue / totalQuotes : 0;
+
+    const statElements = {
+        'stat_total_clients': totalClients,
+        'stat_active_clients': activeClients,
+        'stat_total_revenue': `NZD $${totalRevenue.toFixed(2)}`,
+        'stat_avg_quote': `NZD $${avgQuote.toFixed(2)}`
+    };
+
+    Object.keys(statElements).forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = statElements[id];
+    });
+}
+
+function populateClientSelector() {
+    const selector = document.getElementById('selected_client');
+    if (!selector) return;
+
+    const currentValue = selector.value;
+    selector.innerHTML = '<option value="">-- No Client --</option>';
+
+    clients
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(client => {
+            const option = document.createElement('option');
+            option.value = client.id;
+            option.textContent = `${client.name} (${client.totalQuotes || 0} quotes)`;
+            selector.appendChild(option);
+        });
+
+    selector.value = currentValue;
+}
+
+function openClientModal() {
+    editingClientId = null;
+    const modal = document.getElementById('client-modal');
+
+    if (!modal) {
+        console.error('Client modal not found!');
+        showMessage('Error: Client modal not found', 'error');
+        return;
+    }
+
+    document.getElementById('client-modal-title').textContent = 'Add Client';
+
+    document.getElementById('client_name').value = '';
+    document.getElementById('client_contact').value = '';
+    document.getElementById('client_email').value = '';
+    document.getElementById('client_phone').value = '';
+    document.getElementById('client_address').value = '';
+    document.getElementById('client_discount').value = '0';
+    document.getElementById('client_notes').value = '';
+
+    modal.style.display = 'flex';
+}
+
+function closeClientModal() {
+    document.getElementById('client-modal').style.display = 'none';
+    editingClientId = null;
+}
+
+function editClient(clientId) {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    editingClientId = clientId;
+    document.getElementById('client-modal-title').textContent = 'Edit Client';
+
+    document.getElementById('client_name').value = client.name;
+    document.getElementById('client_contact').value = client.contactName || '';
+    document.getElementById('client_email').value = client.email;
+    document.getElementById('client_phone').value = client.phone || '';
+    document.getElementById('client_address').value = client.address || '';
+    document.getElementById('client_discount').value = client.defaultDiscount || 0;
+    document.getElementById('client_notes').value = client.notes || '';
+
+    document.getElementById('client-modal').style.display = 'flex';
+}
+
+function saveClient() {
+    const name = document.getElementById('client_name').value.trim();
+    const email = document.getElementById('client_email').value.trim();
+
+    if (!name || !email) {
+        showMessage('Please enter client name and email', 'error');
+        return;
+    }
+
+    const clientData = {
+        name: name,
+        contactName: document.getElementById('client_contact').value.trim(),
+        email: email,
+        phone: document.getElementById('client_phone').value.trim(),
+        address: document.getElementById('client_address').value.trim(),
+        defaultDiscount: parseFloat(document.getElementById('client_discount').value) || 0,
+        notes: document.getElementById('client_notes').value.trim()
+    };
+
+    if (editingClientId) {
+        const client = clients.find(c => c.id === editingClientId);
+        if (client) {
+            Object.assign(client, clientData);
+            showMessage('Client updated successfully', 'success');
+        }
+    } else {
+        const newClient = {
+            id: `client-${Date.now()}`,
+            ...clientData,
+            createdAt: new Date().toISOString(),
+            lastQuoteDate: null,
+            totalQuotes: 0,
+            totalSpent: 0,
+            starred: false
+        };
+        clients.push(newClient);
+        showMessage('Client added successfully', 'success');
+    }
+
+    saveClients();
+    updateClientDisplay();
+    closeClientModal();
+}
+
+function deleteClient(clientId) {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    if (!confirm(`Delete client "${client.name}"? This cannot be undone.`)) return;
+
+    clients = clients.filter(c => c.id !== clientId);
+    saveClients();
+    updateClientDisplay();
+    showMessage('Client deleted', 'info');
+}
+
+function toggleStarClient(clientId) {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    client.starred = !client.starred;
+    saveClients();
+    updateClientDisplay();
+
+    const message = client.starred ? 'Added to favorites' : 'Removed from favorites';
+    showMessage(message, 'success');
+}
+
+function applyClientDefaults() {
+    const clientId = document.getElementById('selected_client')?.value;
+    if (!clientId) return;
+
+    const client = clients.find(c => c.id === clientId);
+    if (!client || !client.defaultDiscount) return;
+
+    showMessage(`Applied ${client.defaultDiscount}% discount for ${client.name}`, 'info');
+}
+
+function updateClientQuoteStats(totalCost) {
+    const clientId = document.getElementById('selected_client')?.value;
+    if (!clientId) return;
+
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+
+    client.totalQuotes = (client.totalQuotes || 0) + 1;
+    client.totalSpent = (client.totalSpent || 0) + totalCost;
+    client.lastQuoteDate = new Date().toISOString();
+
+    saveClients();
+    updateClientDisplay();
+}
+
+function clearAllClients() {
+    if (!confirm('Delete all clients? This cannot be undone.')) return;
+
+    clients = [];
+    saveClients();
+    updateClientDisplay();
+    showMessage('All clients deleted', 'info');
+}
+
+function exportClientsToCSV() {
+    if (clients.length === 0) {
+        showMessage('No clients to export', 'error');
+        return;
+    }
+
+    const headers = ['Name', 'Contact Person', 'Email', 'Phone', 'Address', 'Total Quotes', 'Total Spent', 'Default Discount', 'Notes'];
+    const rows = clients.map(c => [
+        c.name,
+        c.contactName || '',
+        c.email,
+        c.phone || '',
+        c.address || '',
+        c.totalQuotes || 0,
+        (c.totalSpent || 0).toFixed(2),
+        c.defaultDiscount || 0,
+        c.notes || ''
+    ]);
+
+    const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `printforge_clients_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    showMessage('Clients exported to CSV', 'success');
+}
+
+// Close client modal on backdrop click
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('client-modal');
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target.id === 'client-modal') closeClientModal();
+        });
+    }
+});
+
+
+// ================================
+// QUOTE TEMPLATES
+// ================================
+
+// Default templates
+const defaultTemplates = [
+    {
+        id: 'template-default-1',
+        name: 'Standard PLA',
+        description: 'Basic PLA prints with standard packaging',
+        category: 'Standard',
+        isDefault: true,
+        createdAt: new Date().toISOString(),
+        clientId: null,
+        template: {
+            material_type: 'PLA',
+            filament_cost: 40.00,
+            filament_required: 0,
+            print_time: 0,
+            shipping_cost: 0,
+            hardware_items: [],
+            packaging_items: [
+                { name: 'Standard Box', quantity: 1, unit_cost: 2.50 }
+            ],
+            printer_cost: 1000,
+            upfront_cost: 0,
+            annual_maintenance: 75,
+            printer_life: 3,
+            average_uptime: 50,
+            power_consumption: 250,
+            electricity_rate: 0.30,
+            electricity_daily: 1.50,
+            efficiency_factor: 1.1,
+            labor_rate: 20
+        }
+    },
+    {
+        id: 'template-default-2',
+        name: 'Premium Carbon Fiber',
+        description: 'Carbon fiber prints with premium packaging',
+        category: 'Premium',
+        isDefault: true,
+        createdAt: new Date().toISOString(),
+        clientId: null,
+        template: {
+            material_type: 'Carbon Fiber',
+            filament_cost: 85.00,
+            filament_required: 0,
+            print_time: 0,
+            shipping_cost: 0,
+            hardware_items: [],
+            packaging_items: [
+                { name: 'Premium Box', quantity: 1, unit_cost: 5.00 },
+                { name: 'Protective Foam', quantity: 1, unit_cost: 2.00 }
+            ],
+            printer_cost: 3000,
+            upfront_cost: 0,
+            annual_maintenance: 200,
+            printer_life: 5,
+            average_uptime: 60,
+            power_consumption: 350,
+            electricity_rate: 0.30,
+            electricity_daily: 2.00,
+            efficiency_factor: 1.15,
+            labor_rate: 35
+        }
+    },
+    {
+        id: 'template-default-3',
+        name: 'Economy Bulk',
+        description: 'Budget PLA prints with minimal packaging',
+        category: 'Economy',
+        isDefault: true,
+        createdAt: new Date().toISOString(),
+        clientId: null,
+        template: {
+            material_type: 'PLA',
+            filament_cost: 35.00,
+            filament_required: 0,
+            print_time: 0,
+            shipping_cost: 0,
+            hardware_items: [],
+            packaging_items: [
+                { name: 'Basic Bag', quantity: 1, unit_cost: 0.50 }
+            ],
+            printer_cost: 500,
+            upfront_cost: 0,
+            annual_maintenance: 50,
+            printer_life: 2,
+            average_uptime: 40,
+            power_consumption: 200,
+            electricity_rate: 0.30,
+            electricity_daily: 1.00,
+            efficiency_factor: 1.05,
+            labor_rate: 15
+        }
+    }
+];
+
+function loadTemplates() {
+    const saved = localStorage.getItem('printforge_quote_templates');
+    if (saved) {
+        try {
+            const userTemplates = JSON.parse(saved);
+            quoteTemplates = [...defaultTemplates, ...userTemplates];
+        } catch (e) {
+            console.error('Failed to load templates:', e);
+            quoteTemplates = [...defaultTemplates];
+        }
+    } else {
+        quoteTemplates = [...defaultTemplates];
+    }
+    updateQuickTemplateList();
+}
+
+function saveTemplates() {
+    const userTemplates = quoteTemplates.filter(t => !t.isDefault);
+    localStorage.setItem('printforge_quote_templates', JSON.stringify(userTemplates));
+}
+
+function toggleTemplateMenu() {
+    const menu = document.getElementById('template-menu');
+    menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+}
+
+function updateQuickTemplateList() {
+    const container = document.getElementById('quick-template-list');
+    if (!container) return;
+
+    if (quoteTemplates.length === 0) {
+        container.innerHTML = '<div class="empty-menu-item">No templates saved</div>';
+        return;
+    }
+
+    container.innerHTML = quoteTemplates
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(template => `
+            <button onclick="applyTemplate('${template.id}'); toggleTemplateMenu();">
+                ${template.name}
+                <span class="template-category">${template.category}</span>
+            </button>
+        `).join('');
+}
+
+function openTemplateManager() {
+    toggleTemplateMenu();
+    document.getElementById('template-manager-modal').style.display = 'flex';
+    filterTemplatesByCategory('all');
+}
+
+function closeTemplateManager() {
+    document.getElementById('template-manager-modal').style.display = 'none';
+}
+
+function filterTemplatesByCategory(category) {
+    document.querySelectorAll('.template-tab').forEach(tab => {
+        tab.classList.remove('active');
+        if (tab.getAttribute('data-category') === category) {
+            tab.classList.add('active');
+        }
+    });
+    renderTemplateGrid(category);
+}
+
+function renderTemplateGrid(category = 'all') {
+    const grid = document.getElementById('template-grid');
+    if (!grid) return;
+
+    const search = document.getElementById('template_search')?.value.toLowerCase() || '';
+    let filtered = quoteTemplates;
+
+    if (category !== 'all') {
+        filtered = filtered.filter(t => t.category === category);
+    }
+
+    if (search) {
+        filtered = filtered.filter(t =>
+            t.name.toLowerCase().includes(search) ||
+            t.description.toLowerCase().includes(search)
+        );
+    }
+
+    if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-state">No templates found</div>';
+        return;
+    }
+
+    grid.innerHTML = filtered.map(template => {
+        const isDefault = template.isDefault;
+        const deleteBtn = isDefault ? '' : `<button class="btn btn-sm btn-danger" onclick="deleteTemplate('${template.id}')">Delete</button>`;
+
+        return `
+            <div class="template-card">
+                <div class="template-card-header">
+                    <h3>${template.name}</h3>
+                    <span class="template-badge template-badge-${template.category.toLowerCase()}">${template.category}</span>
+                </div>
+                <p class="template-description">${template.description || 'No description'}</p>
+                <div class="template-details">
+                    <div class="template-detail-item">
+                        <span class="template-detail-label">Material:</span>
+                        <span class="template-detail-value">${template.template.material_type}</span>
+                    </div>
+                    <div class="template-detail-item">
+                        <span class="template-detail-label">Labor Rate:</span>
+                        <span class="template-detail-value">NZD $${template.template.labor_rate}/hr</span>
+                    </div>
+                </div>
+                <div class="template-card-actions">
+                    <button class="btn btn-sm btn-primary" onclick="applyTemplate('${template.id}'); closeTemplateManager();">Apply</button>
+                    <button class="btn btn-sm" onclick="duplicateTemplate('${template.id}')">Duplicate</button>
+                    ${deleteBtn}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function filterTemplates() {
+    const activeCategory = document.querySelector('.template-tab.active')?.getAttribute('data-category') || 'all';
+    renderTemplateGrid(activeCategory);
+}
+
+function openSaveTemplateModal() {
+    toggleTemplateMenu();
+    editingTemplateId = null;
+    document.getElementById('save-template-title').textContent = 'Save as Template';
+    document.getElementById('template_name').value = '';
+    document.getElementById('template_description').value = '';
+    document.getElementById('template_category').value = 'Standard';
+    document.getElementById('template_link_client').checked = false;
+    document.getElementById('template_client_selector_group').style.display = 'none';
+
+    // Populate client dropdown
+    const clientSelect = document.getElementById('template_client');
+    if (clientSelect && clients) {
+        clientSelect.innerHTML = '<option value="">-- Select Client --</option>' +
+            clients.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+    }
+
+    document.getElementById('save-template-modal').style.display = 'flex';
+}
+
+function closeSaveTemplateModal() {
+    document.getElementById('save-template-modal').style.display = 'none';
+}
+
+// Toggle client selector visibility
+document.addEventListener('DOMContentLoaded', function() {
+    const linkCheckbox = document.getElementById('template_link_client');
+    if (linkCheckbox) {
+        linkCheckbox.addEventListener('change', function() {
+            const selectorGroup = document.getElementById('template_client_selector_group');
+            if (selectorGroup) {
+                selectorGroup.style.display = this.checked ? 'block' : 'none';
+            }
+        });
+    }
+});
+
+function getCurrentFormState() {
+    return {
+        material_type: document.getElementById('material_type')?.value || '',
+        filament_cost: parseFloat(document.getElementById('filament_cost')?.value) || 0,
+        filament_required: parseFloat(document.getElementById('filament_required')?.value) || 0,
+        print_time: parseFloat(document.getElementById('print_time')?.value) || 0,
+        shipping_cost: parseFloat(document.getElementById('shipping_cost')?.value) || 0,
+        hardware_items: getHardwareItems(),
+        packaging_items: getPackagingItems(),
+        printer_cost: parseFloat(document.getElementById('printer_cost')?.value) || 0,
+        upfront_cost: parseFloat(document.getElementById('upfront_cost')?.value) || 0,
+        annual_maintenance: parseFloat(document.getElementById('annual_maintenance')?.value) || 0,
+        printer_life: parseFloat(document.getElementById('printer_life')?.value) || 0,
+        average_uptime: parseFloat(document.getElementById('average_uptime')?.value) || 0,
+        power_consumption: parseFloat(document.getElementById('power_consumption')?.value) || 0,
+        electricity_rate: parseFloat(document.getElementById('electricity_rate')?.value) || 0,
+        electricity_daily: parseFloat(document.getElementById('electricity_daily')?.value) || 0,
+        efficiency_factor: parseFloat(document.getElementById('efficiency_factor')?.value) || 0,
+        labor_rate: parseFloat(document.getElementById('labor_rate')?.value) || 0
+    };
+}
+
+function getHardwareItems() {
+    const table = document.getElementById('hardware-table');
+    if (!table) return [];
+
+    const rows = table.querySelectorAll('tbody tr');
+    return Array.from(rows).map(row => {
+        return {
+            name: row.querySelector('.hw-name')?.value || '',
+            quantity: parseFloat(row.querySelector('.hw-quantity')?.value) || 0,
+            unit_cost: parseFloat(row.querySelector('.hw-cost')?.value) || 0
+        };
+    }).filter(item => item.name);
+}
+
+function getPackagingItems() {
+    const table = document.getElementById('packaging-table');
+    if (!table) return [];
+
+    const rows = table.querySelectorAll('tbody tr');
+    return Array.from(rows).map(row => {
+        return {
+            name: row.querySelector('.pkg-name')?.value || '',
+            quantity: parseFloat(row.querySelector('.pkg-quantity')?.value) || 0,
+            unit_cost: parseFloat(row.querySelector('.pkg-cost')?.value) || 0
+        };
+    }).filter(item => item.name);
+}
+
+function saveQuoteTemplate() {
+    const name = document.getElementById('template_name').value.trim();
+    const description = document.getElementById('template_description').value.trim();
+    const category = document.getElementById('template_category').value;
+    const linkToClient = document.getElementById('template_link_client').checked;
+    const clientId = linkToClient ? document.getElementById('template_client')?.value : null;
+
+    if (!name) {
+        showMessage('Please enter a template name', 'error');
+        return;
+    }
+
+    const templateData = {
+        id: editingTemplateId || `template-${Date.now()}`,
+        name: name,
+        description: description,
+        category: category,
+        isDefault: false,
+        createdAt: new Date().toISOString(),
+        clientId: clientId,
+        template: getCurrentFormState()
+    };
+
+    if (editingTemplateId) {
+        const index = quoteTemplates.findIndex(t => t.id === editingTemplateId);
+        if (index !== -1) {
+            quoteTemplates[index] = templateData;
+            showMessage('Template updated successfully', 'success');
+        }
+    } else {
+        quoteTemplates.push(templateData);
+        showMessage('Template saved successfully', 'success');
+    }
+
+    saveTemplates();
+    updateQuickTemplateList();
+    closeSaveTemplateModal();
+    renderTemplateGrid(document.querySelector('.template-tab.active')?.getAttribute('data-category') || 'all');
+}
+
+function applyTemplate(templateId) {
+    const template = quoteTemplates.find(t => t.id === templateId);
+    if (!template) return;
+
+    const t = template.template;
+
+    // Basic Info
+    if (document.getElementById('material_type')) document.getElementById('material_type').value = t.material_type || '';
+    if (document.getElementById('filament_cost')) document.getElementById('filament_cost').value = t.filament_cost || 0;
+    if (document.getElementById('filament_required')) document.getElementById('filament_required').value = t.filament_required || 0;
+    if (document.getElementById('print_time')) document.getElementById('print_time').value = t.print_time || 0;
+    if (document.getElementById('shipping_cost')) document.getElementById('shipping_cost').value = t.shipping_cost || 0;
+
+    // Hardware Items
+    clearHardwareTable();
+    if (t.hardware_items && t.hardware_items.length > 0) {
+        t.hardware_items.forEach(item => {
+            addHardwareRow();
+            const rows = document.querySelectorAll('#hardware-table tbody tr');
+            const lastRow = rows[rows.length - 1];
+            lastRow.querySelector('.hw-name').value = item.name;
+            lastRow.querySelector('.hw-quantity').value = item.quantity;
+            lastRow.querySelector('.hw-cost').value = item.unit_cost;
+            updateHardwareTotal(lastRow.querySelector('.hw-quantity'));
+        });
+    }
+
+    // Packaging Items
+    clearPackagingTable();
+    if (t.packaging_items && t.packaging_items.length > 0) {
+        t.packaging_items.forEach(item => {
+            addPackagingRow();
+            const rows = document.querySelectorAll('#packaging-table tbody tr');
+            const lastRow = rows[rows.length - 1];
+            lastRow.querySelector('.pkg-name').value = item.name;
+            lastRow.querySelector('.pkg-quantity').value = item.quantity;
+            lastRow.querySelector('.pkg-cost').value = item.unit_cost;
+            updatePackagingTotal(lastRow.querySelector('.pkg-quantity'));
+        });
+    }
+
+    // Advanced Settings
+    if (document.getElementById('printer_cost')) document.getElementById('printer_cost').value = t.printer_cost || 0;
+    if (document.getElementById('upfront_cost')) document.getElementById('upfront_cost').value = t.upfront_cost || 0;
+    if (document.getElementById('annual_maintenance')) document.getElementById('annual_maintenance').value = t.annual_maintenance || 0;
+    if (document.getElementById('printer_life')) document.getElementById('printer_life').value = t.printer_life || 0;
+    if (document.getElementById('average_uptime')) document.getElementById('average_uptime').value = t.average_uptime || 0;
+    if (document.getElementById('power_consumption')) document.getElementById('power_consumption').value = t.power_consumption || 0;
+    if (document.getElementById('electricity_rate')) document.getElementById('electricity_rate').value = t.electricity_rate || 0;
+    if (document.getElementById('electricity_daily')) document.getElementById('electricity_daily').value = t.electricity_daily || 0;
+    if (document.getElementById('efficiency_factor')) document.getElementById('efficiency_factor').value = t.efficiency_factor || 0;
+    if (document.getElementById('labor_rate')) document.getElementById('labor_rate').value = t.labor_rate || 0;
+
+    showMessage(`Applied template: ${template.name}`, 'success');
+}
+
+function clearHardwareTable() {
+    const table = document.getElementById('hardware-table');
+    if (table) {
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
+    }
+}
+
+function clearPackagingTable() {
+    const table = document.getElementById('packaging-table');
+    if (table) {
+        const tbody = table.querySelector('tbody');
+        tbody.innerHTML = '';
+    }
+}
+
+function duplicateTemplate(templateId) {
+    const template = quoteTemplates.find(t => t.id === templateId);
+    if (!template) return;
+
+    const newTemplate = {
+        ...template,
+        id: `template-${Date.now()}`,
+        name: `${template.name} (Copy)`,
+        isDefault: false,
+        createdAt: new Date().toISOString()
+    };
+
+    quoteTemplates.push(newTemplate);
+    saveTemplates();
+    updateQuickTemplateList();
+    renderTemplateGrid(document.querySelector('.template-tab.active')?.getAttribute('data-category') || 'all');
+    showMessage('Template duplicated', 'success');
+}
+
+function deleteTemplate(templateId) {
+    const template = quoteTemplates.find(t => t.id === templateId);
+    if (!template) return;
+
+    if (!confirm(`Delete template "${template.name}"? This cannot be undone.`)) return;
+
+    quoteTemplates = quoteTemplates.filter(t => t.id !== templateId);
+    saveTemplates();
+    updateQuickTemplateList();
+    renderTemplateGrid(document.querySelector('.template-tab.active')?.getAttribute('data-category') || 'all');
+    showMessage('Template deleted', 'info');
+}
+
+// ================================
+// AUTOMATIC BACKUPS SYSTEM
+// ================================
+
+let backups = [];
+let backupSettings = {
+    enabled: false,
+    frequency: 'daily',
+    autoDownload: false,
+    include: {
+        settings: true,
+        clients: true,
+        templates: true,
+        inventory: true,
+        history: true,
+        profiles: true,
+        presets: true
+    },
+    lastBackup: null
+};
+
+// Load backup settings and backups from localStorage
+function loadBackupSettings() {
+    const saved = localStorage.getItem('printforge_backup_settings');
+    if (saved) {
+        try {
+            backupSettings = JSON.parse(saved);
+        } catch (e) {
+            console.error('Error loading backup settings:', e);
+        }
+    }
+
+    const savedBackups = localStorage.getItem('printforge_backups');
+    if (savedBackups) {
+        try {
+            backups = JSON.parse(savedBackups);
+        } catch (e) {
+            console.error('Error loading backups:', e);
+        }
+    }
+
+    // Update UI
+    updateBackupSettingsUI();
+}
+
+// Save backup settings to localStorage
+function saveBackupSettings() {
+    localStorage.setItem('printforge_backup_settings', JSON.stringify(backupSettings));
+}
+
+// Save backups to localStorage
+function saveBackups() {
+    localStorage.setItem('printforge_backups', JSON.stringify(backups));
+}
+
+// Update backup settings UI
+function updateBackupSettingsUI() {
+    const enabledCheckbox = document.getElementById('backup_enabled');
+    const detailsSection = document.getElementById('backup-settings-details');
+    const frequencySelect = document.getElementById('backup_frequency');
+    const autoDownloadCheckbox = document.getElementById('backup_auto_download');
+    const lastTimeSpan = document.getElementById('backup_last_time');
+
+    if (enabledCheckbox) enabledCheckbox.checked = backupSettings.enabled;
+    if (detailsSection) detailsSection.style.display = backupSettings.enabled ? 'block' : 'none';
+    if (frequencySelect) frequencySelect.value = backupSettings.frequency;
+    if (autoDownloadCheckbox) autoDownloadCheckbox.checked = backupSettings.autoDownload;
+
+    // Update include checkboxes
+    if (backupSettings.include) {
+        Object.keys(backupSettings.include).forEach(key => {
+            const checkbox = document.getElementById(`backup_include_${key}`);
+            if (checkbox) checkbox.checked = backupSettings.include[key];
+        });
+    }
+
+    // Update last backup time
+    if (lastTimeSpan) {
+        if (backupSettings.lastBackup) {
+            const date = new Date(backupSettings.lastBackup);
+            lastTimeSpan.textContent = date.toLocaleString();
+        } else {
+            lastTimeSpan.textContent = 'Never';
+        }
+    }
+}
+
+// Toggle backup enabled
+document.getElementById('backup_enabled')?.addEventListener('change', function() {
+    backupSettings.enabled = this.checked;
+    saveBackupSettings();
+    updateBackupSettingsUI();
+
+    if (this.checked) {
+        showMessage('Automatic backups enabled', 'success');
+        scheduleNextBackup();
+    } else {
+        showMessage('Automatic backups disabled', 'info');
+    }
+});
+
+// Update backup frequency
+document.getElementById('backup_frequency')?.addEventListener('change', function() {
+    backupSettings.frequency = this.value;
+    saveBackupSettings();
+    showMessage(`Backup frequency set to ${this.value}`, 'success');
+    if (backupSettings.enabled) {
+        scheduleNextBackup();
+    }
+});
+
+// Update auto-download setting
+document.getElementById('backup_auto_download')?.addEventListener('change', function() {
+    backupSettings.autoDownload = this.checked;
+    saveBackupSettings();
+    showMessage(this.checked ? 'Auto-download enabled' : 'Auto-download disabled', 'info');
+});
+
+// Update include settings
+['settings', 'clients', 'templates', 'inventory', 'history', 'profiles', 'presets'].forEach(key => {
+    document.getElementById(`backup_include_${key}`)?.addEventListener('change', function() {
+        backupSettings.include[key] = this.checked;
+        saveBackupSettings();
+    });
+});
+
+// Create a backup
+function createBackup(isManual = false) {
+    const backup = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        type: isManual ? 'Manual' : 'Automatic',
+        data: {}
+    };
+
+    // Collect data based on settings
+    if (backupSettings.include.settings) {
+        backup.data.settings = {
+            theme: localStorage.getItem('theme'),
+            backupSettings: backupSettings
+        };
+    }
+
+    if (backupSettings.include.clients) {
+        backup.data.clients = localStorage.getItem('printforge_clients');
+    }
+
+    if (backupSettings.include.templates) {
+        backup.data.templates = localStorage.getItem('printforge_quote_templates');
+    }
+
+    if (backupSettings.include.inventory) {
+        backup.data.inventory = localStorage.getItem('printforge_inventory');
+    }
+
+    if (backupSettings.include.history) {
+        backup.data.history = localStorage.getItem('printforge_history');
+    }
+
+    if (backupSettings.include.profiles) {
+        backup.data.profiles = localStorage.getItem('printforge_profiles');
+    }
+
+    if (backupSettings.include.presets) {
+        backup.data.presets = localStorage.getItem('printforge_material_presets');
+    }
+
+    // Calculate backup stats
+    const dataStr = JSON.stringify(backup.data);
+    backup.size = new Blob([dataStr]).size;
+    backup.itemCount = Object.keys(backup.data).length;
+    backup.dataTypes = Object.keys(backup.data);
+
+    // Add to backups array
+    backups.unshift(backup);
+
+    // Keep only last 30 backups
+    if (backups.length > 30) {
+        backups = backups.slice(0, 30);
+    }
+
+    // Save backups
+    saveBackups();
+
+    // Update last backup time
+    backupSettings.lastBackup = backup.timestamp;
+    saveBackupSettings();
+    updateBackupSettingsUI();
+
+    return backup;
+}
+
+// Create manual backup
+function createManualBackup() {
+    const backup = createBackup(true);
+    showMessage('Backup created successfully!', 'success');
+
+    // Auto-download if enabled
+    if (backupSettings.autoDownload) {
+        exportBackup(backup.id);
+    }
+
+    // Refresh backup manager if open
+    const modal = document.getElementById('backup-manager-modal');
+    if (modal && modal.style.display === 'flex') {
+        loadBackupHistory();
+    }
+}
+
+// Schedule next automatic backup
+function scheduleNextBackup() {
+    if (!backupSettings.enabled) return;
+
+    const now = Date.now();
+    let nextBackupTime = 0;
+
+    if (backupSettings.lastBackup) {
+        const lastBackup = new Date(backupSettings.lastBackup).getTime();
+
+        switch (backupSettings.frequency) {
+            case 'daily':
+                nextBackupTime = lastBackup + (24 * 60 * 60 * 1000); // 24 hours
+                break;
+            case 'weekly':
+                nextBackupTime = lastBackup + (7 * 24 * 60 * 60 * 1000); // 7 days
+                break;
+            case 'monthly':
+                nextBackupTime = lastBackup + (30 * 24 * 60 * 60 * 1000); // 30 days
+                break;
+        }
+    } else {
+        // First backup - do it immediately
+        nextBackupTime = now;
+    }
+
+    // If it's time for backup, create one
+    if (now >= nextBackupTime) {
+        const backup = createBackup(false);
+
+        if (backupSettings.autoDownload) {
+            exportBackup(backup.id);
+        }
+    }
+}
+
+// Open backup manager
+function openBackupManager() {
+    const modal = document.getElementById('backup-manager-modal');
+    if (!modal) {
+        console.error('Backup manager modal not found!');
+        return;
+    }
+
+    loadBackupHistory();
+    modal.style.display = 'flex';
+}
+
+// Close backup manager
+function closeBackupManager() {
+    const modal = document.getElementById('backup-manager-modal');
+    if (modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Load and display backup history
+function loadBackupHistory() {
+    const tbody = document.getElementById('backup-history-tbody');
+    if (!tbody) return;
+
+    if (backups.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">
+                    No backups found. Create your first backup to get started.
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = backups.map(backup => {
+        const date = new Date(backup.timestamp);
+        const sizeKB = (backup.size / 1024).toFixed(2);
+        const dataTypes = backup.dataTypes.join(', ');
+
+        return `
+            <tr>
+                <td>${date.toLocaleString()}</td>
+                <td><span class="badge ${backup.type === 'Manual' ? 'badge-primary' : 'badge-secondary'}">${backup.type}</span></td>
+                <td>${backup.itemCount} categories</td>
+                <td>${sizeKB} KB</td>
+                <td style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${dataTypes}">${dataTypes}</td>
+                <td>
+                    <button class="btn btn-sm btn-secondary" onclick="restoreBackup('${backup.id}')" title="Restore this backup">
+                        Restore
+                    </button>
+                    <button class="btn btn-sm btn-primary" onclick="exportBackup('${backup.id}')" title="Download as JSON">
+                        Download
+                    </button>
+                    <button class="btn btn-sm btn-danger" onclick="deleteBackup('${backup.id}')" title="Delete backup">
+                        Delete
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Restore from backup
+function restoreBackup(backupId) {
+    const backup = backups.find(b => b.id === backupId);
+    if (!backup) {
+        showMessage('Backup not found', 'error');
+        return;
+    }
+
+    if (!confirm(`Restore backup from ${new Date(backup.timestamp).toLocaleString()}?\n\nThis will overwrite your current data. This action cannot be undone.`)) {
+        return;
+    }
+
+    // Restore data
+    Object.keys(backup.data).forEach(key => {
+        if (key === 'settings') {
+            if (backup.data.settings.theme) {
+                localStorage.setItem('theme', backup.data.settings.theme);
+            }
+        } else {
+            const storageKey = getStorageKeyForDataType(key);
+            if (storageKey && backup.data[key]) {
+                localStorage.setItem(storageKey, backup.data[key]);
+            }
+        }
+    });
+
+    showMessage('Backup restored successfully! Reloading page...', 'success');
+
+    setTimeout(() => {
+        location.reload();
+    }, 1500);
+}
+
+// Get localStorage key for data type
+function getStorageKeyForDataType(type) {
+    const keyMap = {
+        'clients': 'printforge_clients',
+        'templates': 'printforge_quote_templates',
+        'inventory': 'printforge_inventory',
+        'history': 'printforge_history',
+        'profiles': 'printforge_profiles',
+        'presets': 'printforge_material_presets'
+    };
+    return keyMap[type];
+}
+
+// Export backup to JSON file
+async function exportBackup(backupId) {
+    const backup = backups.find(b => b.id === backupId);
+    if (!backup) {
+        showMessage('Backup not found', 'error');
+        return;
+    }
+
+    const date = new Date(backup.timestamp);
+    const defaultFilename = `printforge_backup_${date.toISOString().split('T')[0]}.json`;
+
+    const dataStr = JSON.stringify(backup, null, 2);
+
+    // Desktop mode: use native file dialog
+    if (isDesktopMode()) {
+        const filepath = await window.pywebview.api.save_file_dialog(
+            defaultFilename,
+            'JSON Files (*.json)'
+        );
+
+        if (!filepath) {
+            // User cancelled
+            return;
+        }
+
+        const response = await fetch('/save-file-to-path', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                filepath: filepath,
+                content: dataStr,
+                content_type: 'json'
+            })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+            showMessage('Backup exported!', 'success');
+        } else {
+            showMessage('Export failed: ' + result.error, 'error');
+        }
+    } else {
+        // Web mode: use browser download
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = defaultFilename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        showMessage('Backup exported!', 'success');
+    }
+}
+
+// Delete backup
+function deleteBackup(backupId) {
+    const backup = backups.find(b => b.id === backupId);
+    if (!backup) return;
+
+    if (!confirm(`Delete backup from ${new Date(backup.timestamp).toLocaleString()}?`)) {
+        return;
+    }
+
+    backups = backups.filter(b => b.id !== backupId);
+    saveBackups();
+    loadBackupHistory();
+    showMessage('Backup deleted', 'info');
+}
+
+// Clear all backup history
+function clearBackupHistory() {
+    if (!confirm('Delete all backups? This cannot be undone.\n\nConsider exporting important backups before clearing.')) {
+        return;
+    }
+
+    backups = [];
+    saveBackups();
+    loadBackupHistory();
+    showMessage('All backups cleared', 'info');
+}
+
+// Restore from uploaded file
+function restoreFromFile(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const backup = JSON.parse(e.target.result);
+
+            if (!backup.data || !backup.timestamp) {
+                showMessage('Invalid backup file format', 'error');
+                return;
+            }
+
+            if (!confirm(`Restore backup from ${new Date(backup.timestamp).toLocaleString()}?\n\nThis will overwrite your current data. This action cannot be undone.`)) {
+                return;
+            }
+
+            // Restore data
+            Object.keys(backup.data).forEach(key => {
+                if (key === 'settings') {
+                    if (backup.data.settings.theme) {
+                        localStorage.setItem('theme', backup.data.settings.theme);
+                    }
+                } else {
+                    const storageKey = getStorageKeyForDataType(key);
+                    if (storageKey && backup.data[key]) {
+                        localStorage.setItem(storageKey, backup.data[key]);
+                    }
+                }
+            });
+
+            showMessage('Backup restored successfully! Reloading page...', 'success');
+
+            setTimeout(() => {
+                location.reload();
+            }, 1500);
+
+        } catch (error) {
+            console.error('Error restoring backup:', error);
+            showMessage('Error reading backup file', 'error');
+        }
+    };
+    reader.readAsText(file);
+
+    // Reset file input
+    event.target.value = '';
+}
+
+// Initialize backup system on page load
+loadBackupSettings();
+
+// Check for scheduled backups every hour
+setInterval(() => {
+    scheduleNextBackup();
+}, 60 * 60 * 1000); // Check every hour
+
+// Also check on page load
+scheduleNextBackup();
 

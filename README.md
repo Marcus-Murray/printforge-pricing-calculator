@@ -12,17 +12,29 @@ No more Qt styling headaches! This web-based version gives you complete control 
 - ✅ Clean Ant Design aesthetic
 - ✅ Perfect dropdowns with clear arrows
 - ✅ Smooth number inputs
-- ✅ Professional dark theme with orange accents
+- ✅ Professional dark/light theme with orange accents
+- ✅ Collapsible sidebar navigation
 - ✅ Responsive design
 - ✅ Zero styling issues
 
-### All the Same Features
+### Core Features (Sprint 1-3)
 - ✅ All pricing calculations
 - ✅ Excel export (same format)
 - ✅ Save/Load configs (JSON)
 - ✅ Real-time auto-calculation
 - ✅ Hardware & packaging tables
 - ✅ Advanced machine cost settings
+- ✅ Batch quote mode
+- ✅ Compare mode
+- ✅ Quote history
+- ✅ Print profiles
+- ✅ Price alerts
+
+### Sprint 4 Features (COMPLETE!)
+- ✅ **Client Management** - Full CRM with discounts, stats, export
+- ✅ **Quote Templates** - Save & reuse complete configurations
+- ✅ **Material Presets** - Quick material cost selection
+- ✅ **Automatic Backups** - Scheduled backups, export/restore, history management
 
 ### Better Development
 - ✅ Edit CSS instantly (no recompiling)
@@ -331,6 +343,8 @@ You now have a **professional, modern, web-based pricing calculator** with:
 
 ---
 
-**Made with ❤️ for PrintForge**  
-**Version:** 2.0 (Web Edition)  
+**Made with ❤️ for PrintForge**
+**Version:** 1.1.0 (Sprint 4 Complete)
 **Date:** January 2026
+**See:** [CHANGELOG.md](CHANGELOG.md) for detailed changes
+**See:** [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for architecture details
