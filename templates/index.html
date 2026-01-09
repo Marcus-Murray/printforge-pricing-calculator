@@ -92,10 +92,11 @@
                     </svg>
                     <span>History</span>
                 </button>
-                <button class="sidebar-action-button" onclick="openBackupManager()" title="Manage Backups">
+                <button class="tab-button" data-tab="backups">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-                        <circle cx="12" cy="12" r="3"/>
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="17 8 12 3 7 8"/>
+                        <line x1="12" y1="3" x2="12" y2="15"/>
                     </svg>
                     <span>Backups</span>
                 </button>
@@ -164,8 +165,8 @@
                     </svg>
                 </button>
                 <div class="export-menu" id="export-menu" style="display: none;">
-                    <button onclick="exportToExcel(); toggleExportMenu();">📊 Export to Excel</button>
-                    <button onclick="exportToPDF(); toggleExportMenu();">📄 Export to PDF</button>
+                    <button onclick="exportToExcel(); toggleExportMenu();">Export to Excel</button>
+                    <button onclick="exportToPDF(); toggleExportMenu();">Export to PDF</button>
                 </div>
             </div>
             <div class="template-dropdown">
@@ -211,8 +212,9 @@
                                     <span class="tooltip-text">Select a client to track this quote and apply default discount</span>
                                 </span>
                             </label>
-                            <select id="selected_client" onchange="applyClientDefaults()">
+                            <select id="selected_client" onchange="handleClientSelection()">
                                 <option value="">-- No Client --</option>
+                                <option value="_add_new">+ Add New Client</option>
                                 <!-- Populated by JavaScript -->
                             </select>
                         </div>
@@ -258,7 +260,7 @@
                             </label>
                             <div style="display: flex; gap: 8px; align-items: center;">
                                 <select id="material_type" onchange="handleMaterialSelection()" style="flex: 1;">
-                                    <option value="_add_preset">➕ Add Custom Preset</option>
+                                    <option value="_add_preset">+ Add Custom Preset</option>
                                     <optgroup label="─────── Standard Materials ───────">
                                         <option value="PLA">PLA (Polylactic Acid)</option>
                                         <option value="PLA+">PLA+ (Enhanced PLA)</option>
@@ -420,7 +422,7 @@
                     <div class="section-header-with-action">
                         <h3>Machine Cost Calculation</h3>
                         <button class="btn btn-secondary" onclick="openProfileManager()" title="Manage print profiles">
-                            ⚙️ Manage Profiles
+                            Manage Profiles
                         </button>
                     </div>
                     <div class="form-grid">
@@ -665,10 +667,10 @@
 
                     <div class="batch-export-actions">
                         <button class="btn btn-secondary" onclick="exportBatchToExcel()" title="Export batch to Excel">
-                            📊 Export Batch to Excel
+                            Export Batch to Excel
                         </button>
                         <button class="btn btn-secondary" onclick="exportBatchToPDF()" title="Export batch to PDF">
-                            📄 Export Batch to PDF
+                            Export Batch to PDF
                         </button>
                     </div>
                 </div>
@@ -707,10 +709,10 @@
                         <h2>Cost History & Trends</h2>
                         <div class="history-actions">
                             <button class="btn btn-secondary" onclick="clearHistory()" title="Clear all history data">
-                                🗑️ Clear History
+                                Clear History
                             </button>
                             <button class="btn btn-secondary" onclick="exportHistoryToExcel()" title="Export history to Excel">
-                                📊 Export History
+                                Export History
                             </button>
                         </div>
                     </div>
@@ -808,9 +810,57 @@
 
             <!-- Clients Tab -->
             <div id="clients-tab" class="tab-pane">
+                <div class="tab-header">
+                    <h2>Client Management</h2>
+                    <p>Manage your client database and track quotes</p>
+                </div>
+
+                <!-- Add/Edit Client Form -->
+                <div class="section" id="client-form-section">
+                    <div class="section-header">
+                        <h2 id="client-form-title">Add Client</h2>
+                        <button class="btn btn-secondary" onclick="cancelClientForm()">Cancel</button>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Client Name: <span class="required">*</span></label>
+                            <input type="text" id="client_name" placeholder="Company or individual name">
+                        </div>
+                        <div class="form-group">
+                            <label>Contact Person:</label>
+                            <input type="text" id="client_contact" placeholder="Primary contact">
+                        </div>
+                        <div class="form-group">
+                            <label>Email: <span class="required">*</span></label>
+                            <input type="email" id="client_email" placeholder="contact@example.com">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone:</label>
+                            <input type="tel" id="client_phone" placeholder="+64 21 123 4567">
+                        </div>
+                        <div class="form-group">
+                            <label>Address:</label>
+                            <input type="text" id="client_address" placeholder="Street address, city">
+                        </div>
+                        <div class="form-group">
+                            <label>Default Discount (%):</label>
+                            <input type="number" id="client_discount" min="0" max="100" value="0" step="1">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom: 24px;">
+                        <label>Notes:</label>
+                        <textarea id="client_notes" rows="3" placeholder="Special requirements, preferences, etc."></textarea>
+                    </div>
+                    <div class="batch-actions">
+                        <button class="btn btn-secondary" onclick="cancelClientForm()">Cancel</button>
+                        <button class="btn btn-primary" onclick="saveClient()">Save Client</button>
+                    </div>
+                </div>
+
+                <!-- Client List Section -->
                 <div class="section">
                     <div class="batch-header">
-                        <h2>Client Management</h2>
+                        <h2>All Clients</h2>
                         <div class="batch-actions">
                             <select id="client_filter" onchange="updateClientTable()">
                                 <option value="all">All Clients</option>
@@ -818,7 +868,6 @@
                                 <option value="active">Active (30 days)</option>
                             </select>
                             <input type="text" id="client_search" placeholder="Search clients..." oninput="updateClientTable()">
-                            <button class="btn btn-primary" onclick="openClientModal()">Add Client</button>
                         </div>
                     </div>
 
@@ -859,7 +908,7 @@
                         </thead>
                         <tbody id="clients-tbody">
                             <tr>
-                                <td colspan="9" class="empty-state">No clients found. Click "Add Client" to get started.</td>
+                                <td colspan="9" class="empty-state">No clients found. Use the form above to add your first client.</td>
                             </tr>
                         </tbody>
                     </table>
@@ -871,7 +920,47 @@
                 </div>
             </div>
 
-            <!-- Results Tab -->
+            <!-- Backups Tab -->
+            <div id="backups-tab" class="tab-pane">
+                <div class="tab-header">
+                    <h2>Backup Manager</h2>
+                    <p>Manage your data backups and restore points</p>
+                </div>
+
+                <div class="section">
+                    <div class="batch-info">
+                        <p><strong>Tip:</strong> Backups are stored in your browser's localStorage. Export them to JSON files for safekeeping.</p>
+                    </div>
+
+                    <table class="data-table" id="backup-history-table">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>Type</th>
+                                <th>Items</th>
+                                <th>Size</th>
+                                <th>Data Included</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="backup-history-tbody">
+                            <!-- Populated by JavaScript -->
+                        </tbody>
+                    </table>
+
+                    <div class="batch-actions">
+                        <button class="btn btn-primary" onclick="createManualBackup()">Create New Backup</button>
+                        <button class="btn btn-danger" onclick="clearBackupHistory()">Clear History</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Restore from File:</label>
+                        <input type="file" id="backup_restore_input" accept=".json" onchange="restoreFromFile(event)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Tab -->
             <div id="settings-tab" class="tab-pane">
                 <div class="tab-header">
                     <h2>Settings</h2>
@@ -1006,7 +1095,6 @@
                             </div>
                         </div>
                         <div class="form-group">
-                            <button class="btn btn-secondary" onclick="openBackupManager()">Manage Backups</button>
                             <button class="btn btn-primary" onclick="createManualBackup()">Backup Now</button>
                         </div>
                     </div>
@@ -1163,6 +1251,14 @@
         </div>
     </div>
 
+    <!-- Floating Action Button for Home -->
+    <button class="fab-home" onclick="switchToTab('calculator')" title="Go to Calculator">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+        </svg>
+    </button>
+
     <!-- Floating Action Button for Calculate -->
     <button class="fab-calculate" onclick="calculateAndShowResults()" title="Calculate & View Results">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1180,52 +1276,6 @@
             <button class="btn btn-sm" onclick="goToInventoryTab()">View Inventory</button>
         </div>
         <button class="alert-close" onclick="dismissInventoryAlert()">✕</button>
-    </div>
-
-    <!-- Client Modal -->
-    <div id="client-modal" class="modal" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="client-modal-title">Add Client</h2>
-                <button class="close-btn" onclick="closeClientModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Client Name: <span class="required">*</span></label>
-                        <input type="text" id="client_name" placeholder="Company or individual name">
-                    </div>
-                    <div class="form-group">
-                        <label>Contact Person:</label>
-                        <input type="text" id="client_contact" placeholder="Primary contact">
-                    </div>
-                    <div class="form-group">
-                        <label>Email: <span class="required">*</span></label>
-                        <input type="email" id="client_email" placeholder="contact@example.com">
-                    </div>
-                    <div class="form-group">
-                        <label>Phone:</label>
-                        <input type="tel" id="client_phone" placeholder="+64 21 123 4567">
-                    </div>
-                    <div class="form-group">
-                        <label>Address:</label>
-                        <input type="text" id="client_address" placeholder="Street address, city">
-                    </div>
-                    <div class="form-group">
-                        <label>Default Discount (%):</label>
-                        <input type="number" id="client_discount" min="0" max="100" value="0" step="1">
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Notes:</label>
-                    <textarea id="client_notes" rows="3" placeholder="Special requirements, preferences, etc."></textarea>
-                </div>
-                <div class="modal-actions">
-                    <button class="btn btn-secondary" onclick="closeClientModal()">Cancel</button>
-                    <button class="btn btn-primary" onclick="saveClient()">Save Client</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Inventory Modal -->
@@ -1447,46 +1497,8 @@
                 </table>
                 <div style="margin-top: 16px;">
                     <button class="btn btn-primary" onclick="openMaterialPresetModal()">
-                        ➕ Add New Preset
+                        + Add New Preset
                     </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Backup Manager Modal -->
-    <div id="backup-manager-modal" class="modal" style="display: none;">
-        <div class="modal-content" style="max-width: 800px;">
-            <div class="modal-header">
-                <h2>Backup Manager</h2>
-                <button class="close-btn" onclick="closeBackupManager()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="batch-info">
-                    <p><strong>Tip:</strong> Backups are stored in your browser's localStorage. Export them to JSON files for safekeeping.</p>
-                </div>
-                <table class="data-table" id="backup-history-table">
-                    <thead>
-                        <tr>
-                            <th>Date & Time</th>
-                            <th>Type</th>
-                            <th>Items</th>
-                            <th>Size</th>
-                            <th>Data Included</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="backup-history-tbody">
-                        <!-- Populated by JavaScript -->
-                    </tbody>
-                </table>
-                <div class="batch-actions">
-                    <button class="btn btn-secondary" onclick="createManualBackup()">Create New Backup</button>
-                    <button class="btn btn-danger" onclick="clearBackupHistory()">Clear History</button>
-                </div>
-                <div class="form-group">
-                    <label>Restore from File:</label>
-                    <input type="file" id="backup_restore_input" accept=".json" onchange="restoreFromFile(event)">
                 </div>
             </div>
         </div>

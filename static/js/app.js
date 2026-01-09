@@ -12,6 +12,58 @@ function isDesktopMode() {
     return window.pywebview !== undefined;
 }
 
+// Helper function to switch tabs programmatically
+function switchToTab(tabName) {
+    // Remove active class from all tabs and buttons
+    document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+
+    // Add active class to the target tab
+    const targetButton = document.querySelector(`[data-tab="${tabName}"]`);
+    if (targetButton) {
+        targetButton.classList.add('active');
+    }
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+
+    // Populate settings UI when settings tab is opened
+    if (tabName === 'settings') {
+        populateSettingsUI();
+    }
+
+    // Load backup history when backups tab is opened
+    if (tabName === 'backups') {
+        loadBackupHistory();
+    }
+
+    // Show client form when clients tab is opened
+    if (tabName === 'clients') {
+        const formSection = document.getElementById('client-form-section');
+        if (formSection) {
+            formSection.style.display = 'block';
+            document.getElementById('client-form-title').textContent = 'Add Client';
+
+            // Clear form
+            document.getElementById('client_name').value = '';
+            document.getElementById('client_contact').value = '';
+            document.getElementById('client_email').value = '';
+            document.getElementById('client_phone').value = '';
+            document.getElementById('client_address').value = '';
+            document.getElementById('client_discount').value = '0';
+            document.getElementById('client_notes').value = '';
+
+            editingClientId = null;
+        }
+    }
+
+    // Close sidebar on mobile
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (sidebar && sidebar.classList.contains('active')) {
+        sidebar.classList.remove('active');
+        overlay.classList.remove('active');
+    }
+}
+
 // Tab Switching
 document.querySelectorAll('.tab-button').forEach(button => {
     button.addEventListener('click', () => {
@@ -321,13 +373,14 @@ function autoCalculate() {
 // Add auto-calculate to all inputs
 document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('input, select').forEach(input => {
-        if (!input.id || input.id !== 'load-file') {
+        // Exclude file inputs and client selector (has its own handler)
+        if (!input.id || (input.id !== 'load-file' && input.id !== 'selected_client')) {
             input.addEventListener('input', autoCalculate);
         }
     });
-    
-    // Initial calculation
-    calculate();
+
+    // Initial calculation removed - no need to calculate on page load
+    // calculate();
 });
 
 // Save Configuration
@@ -663,6 +716,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadHistory(); // Load quote history
     loadClients(); // Load client management
     loadTemplates(); // Load quote templates
+    loadBackupSettings(); // Load backup settings and backup history
     addBatchRow(); // Initialize batch with one row
 
     // Setup sidebar theme toggle
@@ -1404,7 +1458,7 @@ function createProfileModal() {
         <div id="profile-modal" class="modal" style="display: none;">
             <div class="modal-content profile-modal-content">
                 <div class="modal-header">
-                    <h2>⚙️ Print Profile Manager</h2>
+                    <h2>Print Profile Manager</h2>
                     <button class="close-btn" onclick="closeProfileManager()">✕</button>
                 </div>
 
@@ -2550,7 +2604,7 @@ function updateClientTable() {
     }
 
     if (displayData.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No clients found. Click "Add Client" to get started.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No clients found. Use the form above to add your first client.</td></tr>';
         return;
     }
 
@@ -2610,7 +2664,7 @@ function populateClientSelector() {
     if (!selector) return;
 
     const currentValue = selector.value;
-    selector.innerHTML = '<option value="">-- No Client --</option>';
+    selector.innerHTML = '<option value="">-- No Client --</option><option value="_add_new">+ Add New Client</option>';
 
     clients
         .sort((a, b) => a.name.localeCompare(b.name))
@@ -2624,32 +2678,50 @@ function populateClientSelector() {
     selector.value = currentValue;
 }
 
-function openClientModal() {
+// Open client form (new approach - show form in tab instead of modal)
+function openClientForm() {
     editingClientId = null;
-    const modal = document.getElementById('client-modal');
 
-    if (!modal) {
-        console.error('Client modal not found!');
-        showMessage('Error: Client modal not found', 'error');
-        return;
+    // Switch to clients tab
+    switchToTab('clients');
+
+    // Show the form section
+    const formSection = document.getElementById('client-form-section');
+    if (formSection) {
+        formSection.style.display = 'block';
+        document.getElementById('client-form-title').textContent = 'Add Client';
+
+        // Clear form
+        document.getElementById('client_name').value = '';
+        document.getElementById('client_contact').value = '';
+        document.getElementById('client_email').value = '';
+        document.getElementById('client_phone').value = '';
+        document.getElementById('client_address').value = '';
+        document.getElementById('client_discount').value = '0';
+        document.getElementById('client_notes').value = '';
+
+        // Scroll to form
+        formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-
-    document.getElementById('client-modal-title').textContent = 'Add Client';
-
-    document.getElementById('client_name').value = '';
-    document.getElementById('client_contact').value = '';
-    document.getElementById('client_email').value = '';
-    document.getElementById('client_phone').value = '';
-    document.getElementById('client_address').value = '';
-    document.getElementById('client_discount').value = '0';
-    document.getElementById('client_notes').value = '';
-
-    modal.style.display = 'flex';
 }
 
-function closeClientModal() {
-    document.getElementById('client-modal').style.display = 'none';
+// Legacy function for backward compatibility
+function openClientModal() {
+    openClientForm();
+}
+
+// Close/cancel client form
+function cancelClientForm() {
+    const formSection = document.getElementById('client-form-section');
+    if (formSection) {
+        formSection.style.display = 'none';
+    }
     editingClientId = null;
+}
+
+// Legacy function for backward compatibility
+function closeClientModal() {
+    cancelClientForm();
 }
 
 function editClient(clientId) {
@@ -2657,17 +2729,28 @@ function editClient(clientId) {
     if (!client) return;
 
     editingClientId = clientId;
-    document.getElementById('client-modal-title').textContent = 'Edit Client';
 
-    document.getElementById('client_name').value = client.name;
-    document.getElementById('client_contact').value = client.contactName || '';
-    document.getElementById('client_email').value = client.email;
-    document.getElementById('client_phone').value = client.phone || '';
-    document.getElementById('client_address').value = client.address || '';
-    document.getElementById('client_discount').value = client.defaultDiscount || 0;
-    document.getElementById('client_notes').value = client.notes || '';
+    // Switch to clients tab
+    switchToTab('clients');
 
-    document.getElementById('client-modal').style.display = 'flex';
+    // Show the form section
+    const formSection = document.getElementById('client-form-section');
+    if (formSection) {
+        formSection.style.display = 'block';
+        document.getElementById('client-form-title').textContent = 'Edit Client';
+
+        // Populate form with client data
+        document.getElementById('client_name').value = client.name;
+        document.getElementById('client_contact').value = client.contactName || '';
+        document.getElementById('client_email').value = client.email;
+        document.getElementById('client_phone').value = client.phone || '';
+        document.getElementById('client_address').value = client.address || '';
+        document.getElementById('client_discount').value = client.defaultDiscount || 0;
+        document.getElementById('client_notes').value = client.notes || '';
+
+        // Scroll to form
+        formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 function saveClient() {
@@ -2711,7 +2794,7 @@ function saveClient() {
 
     saveClients();
     updateClientDisplay();
-    closeClientModal();
+    cancelClientForm();
 }
 
 function deleteClient(clientId) {
@@ -2736,6 +2819,29 @@ function toggleStarClient(clientId) {
 
     const message = client.starred ? 'Added to favorites' : 'Removed from favorites';
     showMessage(message, 'success');
+}
+
+function handleClientSelection() {
+    const select = document.getElementById('selected_client');
+    if (!select) {
+        console.error('Client select element not found');
+        return;
+    }
+
+    const value = select.value;
+
+    if (value === '_add_new') {
+        // Open the client form to add a new client
+        openClientForm();
+        // Reset to "No Client"
+        select.value = '';
+        return;
+    }
+
+    // Apply client defaults if a client is selected
+    if (value) {
+        applyClientDefaults();
+    }
 }
 
 function applyClientDefaults() {
@@ -2807,15 +2913,7 @@ function exportClientsToCSV() {
     showMessage('Clients exported to CSV', 'success');
 }
 
-// Close client modal on backdrop click
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('client-modal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target.id === 'client-modal') closeClientModal();
-        });
-    }
-});
+// Client modal event listener removed - now using in-tab form
 
 
 // ================================
@@ -3474,11 +3572,8 @@ function createManualBackup() {
         exportBackup(backup.id);
     }
 
-    // Refresh backup manager if open
-    const modal = document.getElementById('backup-manager-modal');
-    if (modal && modal.style.display === 'flex') {
-        loadBackupHistory();
-    }
+    // Refresh backup history (now using tab instead of modal)
+    loadBackupHistory();
 }
 
 // Schedule next automatic backup
@@ -3517,32 +3612,27 @@ function scheduleNextBackup() {
     }
 }
 
-// Open backup manager
+// Open backup manager (now switches to backups tab)
 function openBackupManager() {
-    const modal = document.getElementById('backup-manager-modal');
-    if (!modal) {
-        console.error('Backup manager modal not found!');
-        return;
-    }
-
-    loadBackupHistory();
-    modal.style.display = 'flex';
+    switchToTab('backups');
 }
 
-// Close backup manager
+// Close backup manager (deprecated - kept for compatibility)
 function closeBackupManager() {
-    const modal = document.getElementById('backup-manager-modal');
-    if (modal) {
-        modal.style.display = 'none';
-    }
+    // No longer needed as we use tabs instead of modal
 }
 
 // Load and display backup history
 function loadBackupHistory() {
+    console.log('loadBackupHistory called, backups array:', backups);
     const tbody = document.getElementById('backup-history-tbody');
-    if (!tbody) return;
+    if (!tbody) {
+        console.error('backup-history-tbody element not found!');
+        return;
+    }
 
     if (backups.length === 0) {
+        console.log('No backups found, showing empty state');
         tbody.innerHTML = `
             <tr>
                 <td colspan="6" style="text-align: center; padding: 20px; color: var(--text-secondary);">
@@ -3553,6 +3643,7 @@ function loadBackupHistory() {
         return;
     }
 
+    console.log('Rendering', backups.length, 'backups');
     tbody.innerHTML = backups.map(backup => {
         const date = new Date(backup.timestamp);
         const sizeKB = (backup.size / 1024).toFixed(2);

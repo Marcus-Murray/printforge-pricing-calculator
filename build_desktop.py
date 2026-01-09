@@ -46,9 +46,10 @@ def build_executable():
     # Get project directory
     project_dir = Path(__file__).parent
 
-    # Build command
+    # Build command - use python -m PyInstaller instead of pyinstaller command
     cmd = [
-        "pyinstaller",
+        sys.executable,
+        "-m", "PyInstaller",
         "--name", "PrintForge",
         "--windowed",  # No console window
         "--onedir",    # Create a folder with all dependencies (more reliable than --onefile)

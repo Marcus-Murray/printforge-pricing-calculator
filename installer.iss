@@ -25,7 +25,7 @@ AllowNoIcons=yes
 ; Output
 OutputDir=installer_output
 OutputBaseFilename=PrintForge_Setup_{#MyAppVersion}
-SetupIconFile=static\images\icon.ico
+;SetupIconFile=static\images\icon.ico
 Compression=lzma2/ultra64
 SolidCompression=yes
 

@@ -6,10 +6,35 @@ Uses PyWebView for native window and file dialogs
 import webview
 import threading
 import sys
+import os
 from pathlib import Path
 
 # Import Flask app
 from app import app
+
+# Create necessary directories
+def setup_directories():
+    """Create required directories for the application"""
+    # When frozen (built as exe), use AppData for writable directories
+    if getattr(sys, 'frozen', False):
+        # Running as compiled exe
+        app_data = Path(os.environ.get('APPDATA', '')) / 'PrintForge'
+        app_data.mkdir(exist_ok=True)
+
+        # Create uploads directory in AppData
+        uploads_dir = app_data / 'uploads'
+        uploads_dir.mkdir(exist_ok=True)
+
+        # Update Flask's upload folder to use AppData
+        app.config['UPLOAD_FOLDER'] = str(uploads_dir)
+    else:
+        # Running from source - use local directory
+        base_dir = Path(__file__).parent
+        uploads_dir = base_dir / 'uploads'
+        uploads_dir.mkdir(exist_ok=True)
+
+# Set up directories before starting Flask
+setup_directories()
 
 
 class API:

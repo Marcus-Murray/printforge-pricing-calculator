@@ -1,11 +1,24 @@
 /* PrintForge Pricing Calculator - Ant Design Inspired Styling */
 
-/* Import Skandal Font */
+/* Import Fonts */
 @font-face {
     font-family: 'Skandal';
-    src: url('https://fonts.cdnfonts.com/s/94505/Skandal.woff') format('woff');
+    src: url('../fonts/Skandal.woff2') format('woff2'),
+         url('../fonts/Skandal.woff') format('woff');
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
+}
+
+/* Adelle Font - Local files */
+/* Using SemiBold as the primary weight */
+@font-face {
+    font-family: 'Adelle';
+    src: url('../fonts/Adelle-SemiBold.woff2') format('woff2'),
+         url('../fonts/Adelle-SemiBold.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
 }
 
 * {
@@ -15,17 +28,44 @@
 }
 
 :root {
+    /* Colors */
     --primary-color: #FF6B35;
     --primary-hover: #FF8555;
     --primary-active: #E55A25;
     --bg-dark: #1E1E1E;
     --bg-card: #2D2D2D;
+    --bg-secondary: #2D2D2D;
     --bg-input: #2D2D2D;
     --border-color: #3A3A3A;
     --border-hover: #555555;
     --text-primary: #E0E0E0;
     --text-secondary: #B0B0B0;
     --text-dim: #808080;
+
+    /* Typography - Font Families */
+    --font-brand: 'Skandal', 'Impact', sans-serif;
+    --font-primary: 'Adelle', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+
+    /* Typography - Font Sizes */
+    --font-size-xs: 11px;
+    --font-size-sm: 13px;
+    --font-size-base: 14px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 20px;
+    --font-size-2xl: 24px;
+    --font-size-3xl: 28px;
+    --font-size-4xl: 32px;
+
+    /* Typography - Font Weights */
+    --font-weight-normal: 400;
+    --font-weight-medium: 600;
+    --font-weight-bold: 700;
+
+    /* Typography - Line Heights */
+    --line-height-tight: 1.2;
+    --line-height-base: 1.5;
+    --line-height-relaxed: 1.6;
 }
 
 /* Light Theme */
@@ -35,6 +75,7 @@
     --primary-active: #E55A25;
     --bg-dark: #F5F5F5;
     --bg-card: #FFFFFF;
+    --bg-secondary: #FFFFFF;
     --bg-input: #FFFFFF;
     --border-color: #D9D9D9;
     --border-hover: #BFBFBF;
@@ -44,7 +85,11 @@
 }
 
 [data-theme="light"] header {
-    background: linear-gradient(to right, #0a0a0a, #2a2a2a);
+    background: linear-gradient(to right, #1a1a1a, #3a3a3a);
+    color: #FFFFFF;
+}
+
+[data-theme="light"] header h1 {
     color: #FFFFFF;
 }
 
@@ -68,12 +113,40 @@
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     background-color: var(--bg-dark);
     color: var(--text-primary);
-    line-height: 1.6;
+    line-height: var(--line-height-relaxed);
     padding: 0;
     margin: 0;
     overflow-x: hidden;
+}
+
+/* Default heading styles - use system fonts and smaller sizes */
+h1, h2, h3, h4, h5, h6 {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    font-weight: var(--font-weight-medium);
+    line-height: var(--line-height-tight);
+    color: var(--text-primary);
+    margin: 0;
+}
+
+h1 { font-size: var(--font-size-2xl); }
+h2 { font-size: var(--font-size-lg); }
+h3 { font-size: var(--font-size-md); }
+h4 { font-size: var(--font-size-base); }
+h5 { font-size: var(--font-size-sm); }
+h6 { font-size: var(--font-size-sm); }
+
+/* Use Adele font ONLY for page titles, tab headers, and section headings */
+.tab-pane > h1,
+.tab-header h1,
+.section h2,
+.sidebar-header h3,
+.modal-header h2,
+header h1 {
+    font-family: var(--font-primary);
 }
 
 .container {
@@ -85,7 +158,7 @@ body {
 }
 
 header {
-    background: linear-gradient(to right, #0a0a0a, #2a2a2a);
+    background: linear-gradient(to right, #1a1a1a, #3a3a3a);
     padding: 12px 32px;
     color: #FFFFFF;
     display: flex;
@@ -93,6 +166,7 @@ header {
     align-items: center;
     height: 100px;
     box-sizing: border-box;
+    border-bottom: 2px solid rgba(255, 107, 53, 0.3);
 }
 
 .header-left {
@@ -103,8 +177,8 @@ header {
 }
 
 header h1 {
-    font-size: 24px;
-    font-weight: 600;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-medium);
     margin: 0;
     display: flex;
     align-items: center;
@@ -123,9 +197,9 @@ header h1 .logo-icon {
 }
 
 header h1 .brand {
-    font-family: 'Skandal', 'Impact', sans-serif;
+    font-family: var(--font-brand);
     font-weight: normal;
-    font-size: 28px;
+    font-size: var(--font-size-3xl);
     letter-spacing: 1px;
     color: #FFFFFF;
 }
@@ -137,12 +211,13 @@ header h1 .brand {
     padding: 8px 12px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
-    font-weight: 500;
+    font-weight: var(--font-weight-normal);
 }
 
 .theme-toggle:hover {
@@ -207,8 +282,9 @@ header h1 .brand {
 }
 
 .sidebar-header h3 {
-    font-size: 16px;
-    font-weight: 600;
+
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
     margin: 0;
 }
@@ -217,7 +293,7 @@ header h1 .brand {
     background: none;
     border: none;
     color: var(--text-secondary);
-    font-size: 28px;
+    font-size: var(--font-size-3xl);
     cursor: pointer;
     padding: 0;
     width: 32px;
@@ -239,8 +315,8 @@ header h1 .brand {
 
 .sidebar-section-header {
     padding: 8px 20px;
-    font-size: 12px;
-    font-weight: 600;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
     color: var(--text-dim);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -252,8 +328,9 @@ header h1 .brand {
     border: none;
     color: var(--text-secondary);
     padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 500;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
@@ -285,8 +362,9 @@ header h1 .brand {
     border: none;
     color: var(--text-secondary);
     padding: 12px 20px;
-    font-size: 14px;
-    font-weight: 500;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     cursor: pointer;
     transition: all 0.3s ease;
     display: flex;
@@ -341,16 +419,34 @@ header h1 .brand {
 
 .section h2 {
     color: var(--primary-color);
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
     margin-bottom: 16px;
     padding-bottom: 8px;
     border-bottom: 1px solid var(--border-color);
 }
 
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.section-header h2 {
+    color: var(--primary-color);
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
 .info-text {
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: var(--font-size-base);
     margin-bottom: 16px;
 }
 
@@ -368,8 +464,9 @@ header h1 .brand {
 }
 
 .form-group label {
-    font-size: 14px;
-    font-weight: 500;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     color: var(--text-primary);
 }
 
@@ -378,22 +475,32 @@ input[type="text"],
 input[type="number"],
 input[type="email"],
 input[type="tel"],
-select {
+select,
+textarea {
+
     background-color: var(--bg-input);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     padding: 8px 12px;
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     transition: all 0.3s ease;
     width: 100%;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
 }
 
 input[type="text"]:focus,
 input[type="number"]:focus,
 input[type="email"]:focus,
 input[type="tel"]:focus,
-select:focus {
+select:focus,
+textarea:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 2px rgba(255, 107, 53, 0.2);
@@ -403,7 +510,8 @@ input[type="text"]:hover,
 input[type="number"]:hover,
 input[type="email"]:hover,
 input[type="tel"]:hover,
-select:hover {
+select:hover,
+textarea:hover {
     border-color: var(--border-hover);
 }
 
@@ -457,14 +565,19 @@ select:hover {
 .data-table th {
     padding: 12px;
     text-align: left;
-    font-weight: 600;
-    font-size: 14px;
+
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-base);
     color: var(--text-primary);
     border-bottom: 2px solid var(--primary-color);
 }
 
 .data-table td {
     padding: 12px;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
+    color: var(--text-primary);
     border-bottom: 1px solid var(--border-color);
 }
 
@@ -483,7 +596,7 @@ select:hover {
     border-radius: 4px;
     padding: 6px 10px;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: var(--font-size-sm);
 }
 
 .data-table input:focus {
@@ -498,7 +611,7 @@ select:hover {
     padding: 4px 12px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     transition: all 0.3s ease;
 }
 
@@ -513,8 +626,9 @@ select:hover {
     padding: 10px 20px;
     border: none;
     border-radius: 6px;
-    font-size: 14px;
-    font-weight: 500;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     cursor: pointer;
     transition: all 0.3s ease;
 }
@@ -562,14 +676,17 @@ select:hover {
 }
 
 .result-item label {
-    font-weight: 500;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     color: var(--text-primary);
 }
 
 .result-value {
-    font-weight: 600;
+
+    font-weight: var(--font-weight-medium);
     color: var(--primary-color);
-    font-size: 16px;
+    font-size: var(--font-size-md);
 }
 
 .total-cost-section {
@@ -581,8 +698,9 @@ select:hover {
 }
 
 .total-cost {
+
     font-size: 48px;
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     color: var(--primary-color);
     margin-top: 8px;
 }
@@ -603,14 +721,17 @@ select:hover {
 }
 
 .pricing-item label {
-    font-weight: 500;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     color: var(--text-primary);
 }
 
 .price-value {
-    font-weight: 600;
+
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
-    font-size: 18px;
+    font-size: var(--font-size-lg);
 }
 
 .custom-margin {
@@ -631,7 +752,7 @@ select:hover {
 
 .percent-symbol {
     color: var(--text-secondary);
-    font-weight: 500;
+    font-weight: var(--font-weight-normal);
 }
 
 /* Quick Summary Card */
@@ -653,8 +774,8 @@ select:hover {
 
 .summary-header h3 {
     margin: 0;
-    font-size: 18px;
-    font-weight: 600;
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
 }
 
@@ -666,7 +787,7 @@ select:hover {
     height: 32px;
     border-radius: 6px;
     cursor: pointer;
-    font-size: 20px;
+    font-size: var(--font-size-xl);
     line-height: 1;
     transition: all 0.3s ease;
 }
@@ -696,8 +817,8 @@ select:hover {
 }
 
 .summary-value-large {
-    font-size: 32px;
-    font-weight: 700;
+    font-size: var(--font-size-4xl);
+    font-weight: var(--font-weight-bold);
     color: var(--text-primary);
 }
 
@@ -718,14 +839,14 @@ select:hover {
 }
 
 .summary-label {
-    font-size: 14px;
+    font-size: var(--font-size-base);
     color: var(--text-secondary);
-    font-weight: 500;
+    font-weight: var(--font-weight-normal);
 }
 
 .summary-value {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
 }
 
@@ -744,7 +865,7 @@ select:hover {
     align-items: center;
     gap: 6px;
     padding: 8px 16px;
-    font-size: 14px;
+    font-size: var(--font-size-base);
 }
 
 .action-bar .btn svg {
@@ -777,7 +898,7 @@ select:hover {
     border: none;
     color: var(--text-primary);
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-size-base);
     transition: background-color 0.2s ease;
 }
 
@@ -934,8 +1055,8 @@ select:hover {
     border-radius: 50%;
     text-align: center;
     line-height: 16px;
-    font-size: 11px;
-    font-weight: bold;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-bold);
     cursor: help;
     transition: all 0.3s ease;
 }
@@ -959,7 +1080,7 @@ select:hover {
     bottom: 125%;
     left: 50%;
     margin-left: -140px;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     line-height: 1.5;
     border: 1px solid var(--border-color);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -1002,8 +1123,9 @@ select:hover {
     border-radius: 6px;
     color: var(--text-primary);
     cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     transition: all 0.2s ease;
 }
 
@@ -1038,8 +1160,8 @@ select:hover {
 
 .preset-header h4 {
     margin: 0;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
 }
 
@@ -1070,9 +1192,18 @@ select:hover {
    ============================================================================ */
 
 /* Settings Tab Styles */
+.tab-header {
+    margin-bottom: 32px;
+}
+
+.tab-header p {
+    margin-bottom: 16px;
+}
+
 .settings-grid {
     max-width: 800px;
     margin: 0 auto 24px auto;
+    margin-top: 32px;
 }
 
 .settings-actions {
@@ -1095,8 +1226,8 @@ select:hover {
 
 .settings-section h3 {
     margin: 0 0 16px 0;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
     padding-bottom: 8px;
     border-bottom: 2px solid var(--border-color);
@@ -1180,7 +1311,7 @@ select:hover {
     }
 
     .header-left h1 {
-        font-size: 18px;
+        font-size: var(--font-size-lg);
     }
 
     .header-left h1 .logo-icon {
@@ -1234,9 +1365,9 @@ select:hover {
 .batch-table th {
     padding: 12px 16px;
     text-align: left;
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: var(--font-size-base);
     border-bottom: 2px solid var(--border-color);
 }
 
@@ -1255,7 +1386,7 @@ select:hover {
 }
 
 .batch-table .batch-row-number {
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     color: var(--text-secondary);
     text-align: center;
 }
@@ -1263,11 +1394,11 @@ select:hover {
 .batch-input {
     width: 100%;
     padding: 6px 8px;
-    background-color: var(--bg-primary);
+    background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     color: var(--text-primary);
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     transition: all 0.2s ease;
 }
 
@@ -1278,8 +1409,8 @@ select:hover {
 }
 
 .batch-cost {
-    font-weight: 600;
-    font-size: 14px;
+    font-weight: var(--font-weight-medium);
+    font-size: var(--font-size-base);
 }
 
 .batch-actions {
@@ -1320,7 +1451,7 @@ select:hover {
 
 .batch-table tfoot td {
     padding: 16px;
-    font-size: 15px;
+    font-size: var(--font-size-base);
 }
 
 .batch-summary-row {
@@ -1338,7 +1469,7 @@ select:hover {
 .batch-info p {
     margin: 0;
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: var(--font-size-base);
 }
 
 .batch-export-actions {
@@ -1398,7 +1529,7 @@ select:hover {
 }
 
 .modal-content {
-    background-color: var(--bg-primary);
+    background-color: var(--bg-card);
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
     max-width: 700px;
@@ -1419,8 +1550,9 @@ select:hover {
 
 .modal-header h2 {
     margin: 0;
-    font-size: 20px;
-    font-weight: 600;
+
+    font-size: var(--font-size-xl);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
 }
 
@@ -1455,8 +1587,8 @@ select:hover {
 
 .profile-info h3 {
     margin: 0 0 4px 0;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
     display: flex;
     align-items: center;
@@ -1465,7 +1597,7 @@ select:hover {
 
 .profile-info p {
     margin: 0;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     color: var(--text-secondary);
 }
 
@@ -1476,7 +1608,7 @@ select:hover {
 
 .btn-sm {
     padding: 6px 12px;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
 }
 
 .badge {
@@ -1485,8 +1617,8 @@ select:hover {
     color: white;
     padding: 2px 8px;
     border-radius: 4px;
-    font-size: 11px;
-    font-weight: 600;
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-medium);
     text-transform: uppercase;
 }
 
@@ -1573,7 +1705,7 @@ select:hover {
 }
 
 .stat-label {
-    font-size: 13px;
+    font-size: var(--font-size-sm);
     color: var(--text-secondary);
     margin-bottom: 8px;
     text-transform: uppercase;
@@ -1581,8 +1713,8 @@ select:hover {
 }
 
 .stat-value {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
     color: var(--primary-color);
 }
 
@@ -1612,8 +1744,8 @@ select:hover {
 .history-table th {
     padding: 12px 16px;
     text-align: left;
-    font-size: 13px;
-    font-weight: 600;
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -1642,7 +1774,7 @@ select:hover {
 
 .history-table .btn-icon {
     padding: 4px 8px;
-    font-size: 12px;
+    font-size: var(--font-size-xs);
 }
 
 /* ============================================================
@@ -1684,10 +1816,10 @@ select:hover {
 
 .slot-name-input {
     flex: 1;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
     padding: 8px;
-    background: var(--bg-primary);
+    background: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     color: var(--text-primary);
@@ -1712,14 +1844,14 @@ select:hover {
 }
 
 .result-label {
-    font-size: 12px;
+    font-size: var(--font-size-xs);
     color: var(--text-secondary);
     margin-bottom: 4px;
 }
 
 .result-value {
-    font-size: 24px;
-    font-weight: 700;
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-bold);
     color: var(--primary-color);
 }
 
@@ -1730,12 +1862,13 @@ select:hover {
 .notes-textarea {
     width: 100%;
     padding: 12px;
-    background-color: var(--bg-primary);
+    background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     color: var(--text-primary);
-    font-family: inherit;
-    font-size: 14px;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     resize: vertical;
     min-height: 100px;
 }
@@ -1753,7 +1886,7 @@ select:hover {
 .star-btn {
     background: none;
     border: none;
-    font-size: 18px;
+    font-size: var(--font-size-lg);
     cursor: pointer;
     padding: 4px;
     transition: all 0.2s ease;
@@ -1768,6 +1901,41 @@ select:hover {
 .star-btn.starred {
     opacity: 1;
     color: #FFD700;
+}
+
+/* Floating Action Button (FAB) for Home */
+.fab-home {
+    position: fixed;
+    bottom: 104px; /* 64px (calculate button height) + 16px (gap) + 24px (bottom margin) */
+    right: 24px;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+    transition: all 0.3s ease;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.fab-home:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.6);
+    background: var(--primary-hover);
+}
+
+.fab-home:active {
+    transform: scale(0.95);
+}
+
+.fab-home svg {
+    width: 28px;
+    height: 28px;
 }
 
 /* Floating Action Button (FAB) for Calculate */
@@ -1835,7 +2003,7 @@ select:hover {
 }
 
 .alert-icon {
-    font-size: 28px;
+    font-size: var(--font-size-3xl);
     flex-shrink: 0;
 }
 
@@ -1844,13 +2012,13 @@ select:hover {
 }
 
 .alert-text strong {
-    font-weight: 600;
+    font-weight: var(--font-weight-medium);
     color: #fff;
 }
 
 .alert-text p {
     margin: 8px 0 0 0;
-    font-size: 14px;
+    font-size: var(--font-size-base);
     line-height: 1.5;
 }
 
@@ -1858,7 +2026,7 @@ select:hover {
     background: none;
     border: none;
     color: white;
-    font-size: 28px;
+    font-size: var(--font-size-3xl);
     cursor: pointer;
     padding: 0;
     width: 28px;
@@ -1885,14 +2053,17 @@ select:hover {
 }
 
 .clients-tab .stat-label {
-    font-size: 0.875rem;
+
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-normal);
     color: var(--text-secondary);
     margin-bottom: 8px;
 }
 
 .clients-tab .stat-value {
-    font-size: 1.5rem;
-    font-weight: 600;
+
+    font-size: var(--font-size-2xl);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
 }
 
@@ -1956,7 +2127,7 @@ select:hover {
     color: var(--text-primary);
     cursor: pointer;
     transition: background-color 0.2s ease;
-    font-size: 14px;
+    font-size: var(--font-size-base);
 }
 
 .template-menu button:hover {
@@ -1971,7 +2142,7 @@ select:hover {
 
 .template-category {
     display: inline-block;
-    font-size: 11px;
+    font-size: var(--font-size-xs);
     padding: 2px 8px;
     border-radius: 10px;
     background: var(--bg-dark);
@@ -1993,8 +2164,9 @@ select:hover {
     border: none;
     border-radius: 4px;
     color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 500;
+
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-normal);
     cursor: pointer;
     transition: all 0.2s ease;
 }
@@ -2037,17 +2209,17 @@ select:hover {
 }
 
 .template-card-header h3 {
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--font-size-md);
+    font-weight: var(--font-weight-medium);
     color: var(--text-primary);
     margin: 0;
 }
 
 .template-badge {
-    font-size: 11px;
+    font-size: var(--font-size-xs);
     padding: 4px 8px;
     border-radius: 10px;
-    font-weight: 500;
+    font-weight: var(--font-weight-normal);
 }
 
 .template-badge-standard {
@@ -2066,7 +2238,7 @@ select:hover {
 }
 
 .template-description {
-    font-size: 14px;
+    font-size: var(--font-size-base);
     color: var(--text-secondary);
     margin: 0 0 16px 0;
     line-height: 1.5;
@@ -2083,7 +2255,7 @@ select:hover {
     display: flex;
     justify-content: space-between;
     margin-bottom: 8px;
-    font-size: 13px;
+    font-size: var(--font-size-sm);
 }
 
 .template-detail-item:last-child {
@@ -2096,7 +2268,7 @@ select:hover {
 
 .template-detail-value {
     color: var(--text-primary);
-    font-weight: 500;
+    font-weight: var(--font-weight-normal);
 }
 
 .template-card-actions {
@@ -2113,7 +2285,7 @@ select:hover {
     padding: 16px;
     text-align: center;
     color: var(--text-secondary);
-    font-size: 14px;
+    font-size: var(--font-size-base);
 }
 
 #template_search {
@@ -2123,7 +2295,7 @@ select:hover {
     border-radius: 4px;
     background: var(--bg-input);
     color: var(--text-primary);
-    font-size: 14px;
+    font-size: var(--font-size-base);
 }
 
 #template_search:focus {

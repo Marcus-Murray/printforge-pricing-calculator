@@ -16,8 +16,17 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'printforge-pricing-2026'
 
 # Ensure directories exist
-UPLOAD_FOLDER = Path('uploads')
-UPLOAD_FOLDER.mkdir(exist_ok=True)
+# Note: For desktop app, this will be set in app_desktop.py
+# For web app, create in current directory
+import sys
+if not getattr(sys, 'frozen', False):
+    # Running as web app (not frozen exe)
+    UPLOAD_FOLDER = Path('uploads')
+    UPLOAD_FOLDER.mkdir(exist_ok=True)
+else:
+    # Running as frozen exe - will be set by app_desktop.py
+    UPLOAD_FOLDER = Path(os.environ.get('APPDATA', '')) / 'PrintForge' / 'uploads'
+    UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
 @app.route('/')
 def index():
